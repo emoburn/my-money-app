@@ -232,38 +232,33 @@ h1, h2, h3, h4 {
 
 .tx-table {
     width: 100%;
-    table-layout: auto;
+    table-layout: fixed;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .tx-table th, .tx-table td {
-    padding: 12px 6px;
+    padding: 10px 4px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     white-space: normal;
-    vertical-align: top;
-    line-height: 1.3;
+    vertical-align: middle;
+    line-height: 1.2;
 }
 
-/* Ensure title breaks correctly instead of expanding column */
-.tx-table th:nth-child(2), .tx-table td:nth-child(2) {
-    word-break: break-word;
-    overflow-wrap: break-word;
-    min-width: 80px;
-}
-
-/* Prevent numbers from breaking to 2 lines awkwardly, let table layout handle widths */
-.tx-table th:nth-child(3), .tx-table td:nth-child(3),
-.tx-table th:nth-child(4), .tx-table td:nth-child(4),
-.tx-table th:nth-child(5), .tx-table td:nth-child(5) {
-    white-space: nowrap;
-}
+/* Distribute columns strictly to prevent overflow */
+.tx-table th:nth-child(1), .tx-table td:nth-child(1) { width: 28px; text-align: center; }
+.tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: auto; word-break: break-word; }
+.tx-table th:nth-child(3), .tx-table td:nth-child(3) { width: 17%; text-align: right; overflow-wrap: break-word; }
+.tx-table th:nth-child(4), .tx-table td:nth-child(4) { width: 17%; text-align: right; overflow-wrap: break-word; }
+.tx-table th:nth-child(5), .tx-table td:nth-child(5) { width: 17%; text-align: right; overflow-wrap: break-word; }
+.tx-table th:nth-child(6), .tx-table td:nth-child(6) { width: 13%; text-align: center; overflow-wrap: break-word; }
+.tx-table th:nth-child(7), .tx-table td:nth-child(7) { width: 30px; text-align: center; }
 
 .tx-table th {
     color: var(--text-secondary);
     font-weight: 500;
-    font-size: 13px;
+    font-size: 10px;
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -277,7 +272,7 @@ h1, h2, h3, h4 {
 
 .tx-amount {
     font-weight: 600;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .tx-amount.income { color: var(--income); }
