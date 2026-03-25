@@ -1,375 +1,356 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ---- DOM Elements ----
+
+    // ---- DOM ----
     const totalBalanceEl = document.getElementById('total-balance');
-    const totalIncomeEl = document.getElementById('total-income');
+    const totalIncomeEl  = document.getElementById('total-income');
     const totalExpenseEl = document.getElementById('total-expense');
-    const labelIncomeEl = document.getElementById('label-income');
+    const labelIncomeEl  = document.getElementById('label-income');
     const labelExpenseEl = document.getElementById('label-expense');
-    
-    const transactionsListEl = document.getElementById('transactions-list');
-    const emptyStateEl = document.getElementById('empty-state');
-    const emptyStateText = document.getElementById('empty-text');
-    const selectCategoryEl = document.getElementById('select-category');
-    
-    // Modals
-    const modalTx = document.getElementById('modal-transaction');
-    const modalCat = document.getElementById('modal-category');
-    
-    // Buttons & Filters
-    const btnFab = document.getElementById('btn-fab');
-    const btnCloseTx = document.getElementById('btn-close-transaction');
-    const btnAddCatModal = document.getElementById('btn-add-category-modal');
-    const btnCloseCat = document.getElementById('btn-close-category');
-    const btnClearData = document.getElementById('btn-clear-data');
-    
-    const filterType = document.getElementById('filter-type');
-    const filterDaily = document.getElementById('filter-daily');
-    const filterMonthly = document.getElementById('filter-monthly');
-    const filterYearly = document.getElementById('filter-yearly');
-    
-    // Forms
-    const formTx = document.getElementById('form-transaction');
-    const formCat = document.getElementById('form-category');
-    
-    // Form Inputs
-    const inputAmount = document.getElementById('input-amount');
-    const inputTitle = document.getElementById('input-title');
-    const inputNewCat = document.getElementById('input-new-category');
-    const inputDate = document.getElementById('input-date');
-    const typeIncomeRad = document.getElementById('type-income');
-    const typeExpenseRad = document.getElementById('type-expense');
-    
-    // ---- State & Data ----
-    const defaultCategories = ['ทั่วไป', 'อาหาร', 'เดินทาง', 'ช้อปปิ้ง', 'เงินเดือน'];
-    let categories = JSON.parse(localStorage.getItem('mt_categories')) || defaultCategories;
+    const txListEl       = document.getElementById('tx-list');
+    const emptyStateEl   = document.getElementById('empty-state');
+    const emptyTextEl    = document.getElementById('empty-text');
+    const selectCatEl    = document.getElementById('select-category');
+
+    const modalTx        = document.getElementById('modal-transaction');
+    const modalCat       = document.getElementById('modal-category');
+
+    const btnFab         = document.getElementById('btn-fab');
+    const btnAddTop      = document.getElementById('btn-add');
+    const btnCloseTx     = document.getElementById('btn-close-transaction');
+    const btnAddCatMod   = document.getElementById('btn-add-category-modal');
+    const btnCloseCat    = document.getElementById('btn-close-category');
+
+    const formTx         = document.getElementById('form-transaction');
+    const formCat        = document.getElementById('form-category');
+
+    const inputAmount    = document.getElementById('input-amount');
+    const inputTitle     = document.getElementById('input-title');
+    const inputDate      = document.getElementById('input-date');
+    const inputNewCat    = document.getElementById('input-new-category');
+    const btnSubmitTx    = document.getElementById('btn-submit-tx');
+
+    const filterTabs     = document.querySelectorAll('.filter-tab');
+    const filterDailyEl  = document.getElementById('filter-daily');
+    const filterMonthEl  = document.getElementById('filter-monthly');
+    const filterYearEl   = document.getElementById('filter-yearly');
+
+    const typeIncome  = document.getElementById('type-income');
+    const typeExpense = document.getElementById('type-expense');
+
+    // ---- Data ----
+    const DEFAULT_CATS = ['ทั่วไป', 'อาหาร', 'เดินทาง', 'ช้อปปิ้ง', 'เงินเดือน', 'บิล/ค่าใช้จ่าย'];
+    const CAT_ICONS = {
+        'อาหาร': '🍜', 'ช้อปปิ้ง': '🛍️', 'เดินทาง': '🚗',
+        'เงินเดือน': '💰', 'บิล/ค่าใช้จ่าย': '📄', 'ทั่วไป': '📌'
+    };
+    function getCatIcon(cat) { return CAT_ICONS[cat] || '📝'; }
+
+    let categories = JSON.parse(localStorage.getItem('mt_categories')) || DEFAULT_CATS;
     let transactions = JSON.parse(localStorage.getItem('mt_transactions')) || [];
 
-    // Migrate simple fields
+    // Migrate old data
     transactions = transactions.map(tx => {
         if (!tx.date) tx.date = new Date(tx.timestamp).toISOString().split('T')[0];
         if (typeof tx.isStarred === 'undefined') tx.isStarred = false;
         return tx;
     });
-    
-    // ---- Initialization ----
-    initApp();
-    
-    function initApp() {
-        populateCategories();
-        
-        // Setup initial default dates
+
+    let activeMode = 'monthly';
+
+    // ---- Init ----
+    function init() {
         const now = new Date();
         const yyyy = now.getFullYear();
-        let mm = now.getMonth() + 1;
-        let dd = now.getDate();
-        if(mm < 10) mm = '0' + mm;
-        if(dd < 10) dd = '0' + dd;
-        
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-        const monthStr = `${yyyy}-${mm}`;
-        
-        inputDate.value = todayStr;
-        filterDaily.value = todayStr;
-        filterMonthly.value = monthStr;
-        
-        populateYears();
-        filterYearly.value = yyyy.toString();
-        
-        handleFilterTypeChange(); // Hide/show correct inputs
-        updateUI();
-        registerServiceWorker();
-    }
-    
-    function saveCategories() {
-        localStorage.setItem('mt_categories', JSON.stringify(categories));
-    }
-    
-    function saveTransactions() {
-        localStorage.setItem('mt_transactions', JSON.stringify(transactions));
-    }
-    
-    function populateYears() {
-        filterYearly.innerHTML = '';
-        const currentYear = new Date().getFullYear();
-        const startYear = Math.min(currentYear - 2, ...transactions.map(t => parseInt(t.date.substring(0,4)) || currentYear));
-        const endYear = currentYear + 1;
-        
-        for(let y = endYear; y >= startYear; y--) {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = `ปี ${y + 543}`; // Thai year
-            filterYearly.appendChild(opt);
-        }
-    }
-    
-    // ---- UI Logic ----
-    function formatMoney(amount) {
-        return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-    }
-    
-    function populateCategories() {
-        selectCategoryEl.innerHTML = '';
-        categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            selectCategoryEl.appendChild(option);
-        });
-    }
-    
-    function updateUI() {
-        // 1. Calculate Global Running Balance for all items (oldest to newest)
-        transactions.sort((a, b) => {
-            if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
-            return a.timestamp - b.timestamp;
-        });
-        
-        let globalBalance = 0;
-        transactions.forEach(tx => {
-            if (tx.type === 'income') globalBalance += tx.amount;
-            else globalBalance -= tx.amount;
-            tx.runningBalance = globalBalance;
-        });
-        
-        totalBalanceEl.textContent = '฿' + formatMoney(globalBalance);
+        const mm   = String(now.getMonth() + 1).padStart(2, '0');
+        const dd   = String(now.getDate()).padStart(2, '0');
 
-        // 2. Filter Transactions based on UI
-        let filteredTx = [...transactions];
-        const mode = filterType.value;
-        let labelSuffix = '(ทั้งหมด)';
-        
-        if (mode === 'daily') {
-            const d = filterDaily.value;
-            filteredTx = filteredTx.filter(tx => tx.date === d);
-            const dateObj = new Date(d);
-            labelSuffix = isNaN(dateObj) ? '' : `(${dateObj.toLocaleDateString('th-TH')})`;
-        } else if (mode === 'monthly') {
-            const m = filterMonthly.value; // YYYY-MM
-            filteredTx = filteredTx.filter(tx => tx.date.startsWith(m));
-            const parts = m.split('-');
-            const dateObj = new Date(parts[0], parseInt(parts[1])-1, 1);
-            labelSuffix = isNaN(dateObj) ? '' : `(${dateObj.toLocaleDateString('th-TH', {month: 'short', year:'numeric'})})`;
-        } else if (mode === 'yearly') {
-            const y = filterYearly.value;
-            filteredTx = filteredTx.filter(tx => tx.date.startsWith(y));
-            labelSuffix = `(ปี ${parseInt(y) + 543})`;
+        inputDate.value       = `${yyyy}-${mm}-${dd}`;
+        filterDailyEl.value   = `${yyyy}-${mm}-${dd}`;
+        filterMonthEl.value   = `${yyyy}-${mm}`;
+
+        populateCats();
+        populateYears();
+        setActiveTab('monthly');
+        updateUI();
+        registerSW();
+    }
+
+    function save() { localStorage.setItem('mt_transactions', JSON.stringify(transactions)); }
+    function saveCats() { localStorage.setItem('mt_categories', JSON.stringify(categories)); }
+
+    function formatMoney(n) {
+        return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    }
+
+    function populateCats() {
+        selectCatEl.innerHTML = '';
+        categories.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c; o.textContent = c;
+            selectCatEl.appendChild(o);
+        });
+    }
+
+    function populateYears() {
+        filterYearEl.innerHTML = '';
+        const cur = new Date().getFullYear();
+        let min = cur;
+        transactions.forEach(tx => {
+            const y = parseInt(tx.date);
+            if (!isNaN(y) && y < min) min = y;
+        });
+        for (let y = cur + 1; y >= min - 1; y--) {
+            const o = document.createElement('option');
+            o.value = y;
+            o.textContent  = `ปี ${y + 543}`;
+            if (y === cur) o.selected = true;
+            filterYearEl.appendChild(o);
         }
-        
-        // 3. Calculate Period Summaries (Income/Expense for filtered items)
-        const periodIncome = filteredTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-        const periodExpense = filteredTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-        
-        labelIncomeEl.textContent = `รายรับ ${labelSuffix}`;
-        labelExpenseEl.textContent = `รายจ่าย ${labelSuffix}`;
-        totalIncomeEl.textContent = '฿' + formatMoney(periodIncome);
-        totalExpenseEl.textContent = '฿' + formatMoney(periodExpense);
-        
-        // 4. Render Table
-        transactionsListEl.innerHTML = '';
-        const tableResponsive = document.querySelector('.table-responsive');
-        
+    }
+
+    function setActiveTab(mode) {
+        activeMode = mode;
+        filterTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+
+        filterDailyEl.classList.add('hidden');
+        filterMonthEl.classList.add('hidden');
+        filterYearEl.classList.add('hidden');
+
+        if (mode === 'daily')   filterDailyEl.classList.remove('hidden');
+        if (mode === 'monthly') filterMonthEl.classList.remove('hidden');
+        if (mode === 'yearly')  filterYearEl.classList.remove('hidden');
+
+        updateUI();
+    }
+
+    // ---- Render ----
+    function updateUI() {
+        // Sort oldest → newest, then compute running balance
+        transactions.sort((a, b) =>
+            a.date !== b.date ? a.date.localeCompare(b.date) : a.timestamp - b.timestamp
+        );
+
+        let running = 0;
+        transactions.forEach(tx => {
+            running += tx.type === 'income' ? tx.amount : -tx.amount;
+            tx.runningBalance = running;
+        });
+
+        totalBalanceEl.textContent = '฿' + formatMoney(running);
+
+        // Filter
+        let filtered = [...transactions];
+        let labelSuffix = '';
+
+        if (activeMode === 'daily') {
+            const d = filterDailyEl.value;
+            filtered = filtered.filter(tx => tx.date === d);
+            labelSuffix = d ? new Date(d).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '';
+        } else if (activeMode === 'monthly') {
+            const m = filterMonthEl.value;
+            filtered = filtered.filter(tx => tx.date.startsWith(m));
+            if (m) {
+                const [y, mo] = m.split('-');
+                labelSuffix = new Date(y, mo - 1, 1).toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
+            }
+        } else if (activeMode === 'yearly') {
+            const y = filterYearEl.value;
+            filtered = filtered.filter(tx => tx.date.startsWith(y));
+            labelSuffix = y ? `ปี ${parseInt(y) + 543}` : '';
+        }
+
+        const periodInc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const periodExp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+        labelIncomeEl.textContent  = labelSuffix ? `รายรับ (${labelSuffix})` : 'รายรับ';
+        labelExpenseEl.textContent = labelSuffix ? `รายจ่าย (${labelSuffix})` : 'รายจ่าย';
+        totalIncomeEl.textContent  = '฿' + formatMoney(periodInc);
+        totalExpenseEl.textContent = '฿' + formatMoney(periodExp);
+
+        // Render list
+        txListEl.innerHTML = '';
+
         if (transactions.length === 0) {
             emptyStateEl.classList.remove('hidden');
-            emptyStateText.textContent = 'ยังไม่มีรายการ เริ่มต้นบันทึกเลย!';
-            if(tableResponsive) tableResponsive.style.display = 'none';
-        } else if (filteredTx.length === 0) {
-            emptyStateEl.classList.remove('hidden');
-            emptyStateText.textContent = 'ไม่มีรายการในระยะเวลาที่เลือก';
-            if(tableResponsive) tableResponsive.style.display = 'none';
-        } else {
-            emptyStateEl.classList.add('hidden');
-            if(tableResponsive) tableResponsive.style.display = 'block';
-            
-            // Newest at top
-            filteredTx.reverse().forEach(tx => addTransactionDOM(tx));
-        }
-    }
-    
-    function addTransactionDOM(tx) {
-        const isIncome = tx.type === 'income';
-        const incomeStr = isIncome ? `${formatMoney(tx.amount)}` : '-';
-        const expenseStr = !isIncome ? `${formatMoney(tx.amount)}` : '-';
-        const dateStr = new Date(tx.date).toLocaleDateString('th-TH', {day: 'numeric', month: 'short', year: '2-digit'}); // Shorter date
-        
-        const starIcon = tx.isStarred 
-            ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="gold" stroke="gold" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
-            : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
-            
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <button class="btn-icon-custom btn-star ${tx.isStarred ? 'active' : ''}" data-id="${tx.id}">${starIcon}</button>
-            </td>
-            <td>
-                <div class="tx-title">${tx.title}</div>
-                <div class="tx-date">${dateStr}</div>
-            </td>
-            <td class="text-right ${isIncome ? 'tx-amount income' : 'tx-amount'}">${incomeStr}</td>
-            <td class="text-right ${!isIncome ? 'tx-amount expense' : 'tx-amount'}">${expenseStr}</td>
-            <td class="text-right tx-amount neutral">${formatMoney(tx.runningBalance)}</td>
-            <td class="text-center"><span class="tag-category">${tx.category}</span></td>
-            <td>
-                <button class="btn-icon-custom btn-delete" data-id="${tx.id}">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-            </td>
-        `;
-        
-        transactionsListEl.appendChild(tr);
-    }
-    
-    // ---- Event Delegation for Table Actions ----
-    transactionsListEl.addEventListener('click', (e) => {
-        // Toggle Star
-        const starBtn = e.target.closest('.btn-star');
-        if (starBtn) {
-            const txId = starBtn.getAttribute('data-id');
-            const txIndex = transactions.findIndex(t => t.id === txId);
-            if(txIndex !== -1) {
-                transactions[txIndex].isStarred = !transactions[txIndex].isStarred;
-                saveTransactions();
-                updateUI();
-            }
+            emptyTextEl.textContent = 'ยังไม่มีรายการบันทึก';
             return;
         }
 
-        // Delete Row
-        const deleteBtn = e.target.closest('.btn-delete');
-        if (deleteBtn) {
-            const txId = deleteBtn.getAttribute('data-id');
-            if (confirm('ยืนยันการลบรายการนี้?')) {
-                transactions = transactions.filter(t => t.id !== txId);
-                saveTransactions();
-                populateYears();
-                updateUI();
+        if (filtered.length === 0) {
+            emptyStateEl.classList.remove('hidden');
+            emptyTextEl.textContent = 'ไม่มีรายการในช่วงเวลานี้';
+            return;
+        }
+
+        emptyStateEl.classList.add('hidden');
+
+        // Group by date newest first
+        const grouped = {};
+        [...filtered].reverse().forEach(tx => {
+            if (!grouped[tx.date]) grouped[tx.date] = [];
+            grouped[tx.date].push(tx);
+        });
+
+        Object.keys(grouped).sort((a, b) => b.localeCompare(a)).forEach(date => {
+            // Date header
+            const header = document.createElement('div');
+            header.className = 'date-group-header';
+            const dateObj = new Date(date + 'T00:00:00');
+            header.textContent = dateObj.toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'short', year:'2-digit' });
+            txListEl.appendChild(header);
+
+            grouped[date].forEach(tx => txListEl.appendChild(buildCard(tx)));
+        });
+    }
+
+    function buildCard(tx) {
+        const isIncome = tx.type === 'income';
+        const sign     = isIncome ? '+' : '-';
+        const card     = document.createElement('div');
+        card.className = `tx-card ${tx.type}`;
+
+        card.innerHTML = `
+            <div class="tx-icon">${getCatIcon(tx.category)}</div>
+            <div class="tx-info">
+                <div class="tx-title">${tx.title}</div>
+                <div class="tx-meta">
+                    <span class="tx-date-label">${new Date(tx.date + 'T00:00:00').toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
+                    <span class="tx-cat-badge">${tx.category}</span>
+                </div>
+            </div>
+            <div class="tx-right">
+                <div class="tx-amount ${tx.type}">${sign}฿${formatMoney(tx.amount)}</div>
+                <div class="tx-balance-chip">คงเหลือ ฿${formatMoney(tx.runningBalance)}</div>
+                <div class="tx-actions">
+                    <button class="icon-btn btn-star ${tx.isStarred ? 'starred' : ''}" data-id="${tx.id}" title="ติดดาว">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke-width="2" fill="${tx.isStarred ? '#FFD166' : 'none'}" stroke="${tx.isStarred ? '#FFD166' : 'currentColor'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </button>
+                    <button class="icon-btn del btn-delete" data-id="${tx.id}" title="ลบ">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke-width="2" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        return card;
+    }
+
+    // ---- Event Delegation ----
+    txListEl.addEventListener('click', e => {
+        const star = e.target.closest('.btn-star');
+        if (star) {
+            const id = star.dataset.id;
+            const tx = transactions.find(t => t.id === id);
+            if (tx) { tx.isStarred = !tx.isStarred; save(); updateUI(); }
+            return;
+        }
+        const del = e.target.closest('.btn-delete');
+        if (del) {
+            if (confirm('ยืนยันลบรายการนี้?')) {
+                transactions = transactions.filter(t => t.id !== del.dataset.id);
+                save(); populateYears(); updateUI();
             }
         }
     });
-    
-    // ---- Event Listeners ----
-    function handleFilterTypeChange() {
-        filterDaily.classList.add('hidden');
-        filterMonthly.classList.add('hidden');
-        filterYearly.classList.add('hidden');
-        
-        const mode = filterType.value;
-        if(mode === 'daily') filterDaily.classList.remove('hidden');
-        if(mode === 'monthly') filterMonthly.classList.remove('hidden');
-        if(mode === 'yearly') filterYearly.classList.remove('hidden');
-        updateUI();
+
+    // ---- Filter Tabs ----
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.mode));
+    });
+    filterDailyEl.addEventListener('change', updateUI);
+    filterMonthEl.addEventListener('change', updateUI);
+    filterYearEl.addEventListener('change', updateUI);
+
+    // ---- Type Toggle Colors ----
+    function updateTypeUI() {
+        const isIncome = typeIncome.checked;
+        inputAmount.style.color = isIncome ? 'var(--income)' : 'var(--expense)';
+        btnSubmitTx.textContent = isIncome ? 'บันทึกรายรับ' : 'บันทึกรายจ่าย';
+        btnSubmitTx.className = `btn-save ${isIncome ? 'income-btn' : 'expense-btn'}`;
     }
-    
-    filterType.addEventListener('change', handleFilterTypeChange);
-    filterDaily.addEventListener('change', updateUI);
-    filterMonthly.addEventListener('change', updateUI);
-    filterYearly.addEventListener('change', updateUI);
-    
-    // Open Tx Modal
-    btnFab.addEventListener('click', () => {
+
+    typeIncome.addEventListener('change', updateTypeUI);
+    typeExpense.addEventListener('change', updateTypeUI);
+
+    // ---- Modals ----
+    function openTx() {
+        updateTypeUI();
         modalTx.classList.add('active');
-        inputAmount.focus();
+        setTimeout(() => inputAmount.focus(), 400);
+    }
+
+    function closeTx() { modalTx.classList.remove('active'); }
+    function openCat() { modalCat.classList.add('active'); setTimeout(() => inputNewCat.focus(), 350); }
+    function closeCat() { modalCat.classList.remove('active'); }
+
+    btnFab.addEventListener('click', openTx);
+    btnAddTop.addEventListener('click', openTx);
+    btnCloseTx.addEventListener('click', closeTx);
+    btnAddCatMod.addEventListener('click', openCat);
+    btnCloseCat.addEventListener('click', closeCat);
+
+    window.addEventListener('click', e => {
+        if (e.target === modalTx) closeTx();
+        if (e.target === modalCat) closeCat();
     });
-    
-    // Close Tx Modal
-    btnCloseTx.addEventListener('click', () => {
-        modalTx.classList.remove('active');
-    });
-    
-    // Open Cat Modal
-    btnAddCatModal.addEventListener('click', () => {
-        modalCat.classList.add('active');
-        inputNewCat.focus();
-    });
-    
-    // Close Cat Modal
-    btnCloseCat.addEventListener('click', () => {
-        modalCat.classList.remove('active');
-    });
-    
-    // Close on overlay click
-    window.addEventListener('click', (e) => {
-        if (e.target === modalTx) modalTx.classList.remove('active');
-        if (e.target === modalCat) modalCat.classList.remove('active');
-    });
-    
-    // Toggle color on amount based on income/expense selection
-    typeIncomeRad.addEventListener('change', () => { inputAmount.style.color = "var(--income)"; });
-    typeExpenseRad.addEventListener('change', () => { inputAmount.style.color = "var(--expense)"; });
-    
-    // Form Submit: Transaction
-    formTx.addEventListener('submit', (e) => {
+
+    // ---- Form Submissions ----
+    formTx.addEventListener('submit', e => {
         e.preventDefault();
-        
-        const type = document.querySelector('input[name="tx-type"]:checked').value;
+        const type   = document.querySelector('input[name="tx-type"]:checked').value;
         const amount = parseFloat(inputAmount.value);
-        const title = inputTitle.value.trim();
-        const category = selectCategoryEl.value;
-        const dateStr = inputDate.value;
-        
-        if (!title || isNaN(amount) || !dateStr) {
+        const title  = inputTitle.value.trim();
+        const cat    = selectCatEl.value;
+        const date   = inputDate.value;
+
+        if (!title || isNaN(amount) || amount <= 0 || !date) {
             alert('กรุณากรอกข้อมูลให้ครบถ้วน');
             return;
         }
-        
-        const newTx = {
-            id: generateID(),
-            type,
-            amount,
-            title,
-            category,
-            date: dateStr,
-            timestamp: Date.now(),
-            isStarred: false
-        };
-        
-        transactions.push(newTx);
-        saveTransactions();
-        populateYears();
-        updateUI();
-        
-        // Reset form & close
+
+        transactions.push({ id: genId(), type, amount, title, category: cat, date, timestamp: Date.now(), isStarred: false });
+        save(); populateYears(); updateUI();
+
         inputAmount.value = '';
-        inputTitle.value = '';
-        modalTx.classList.remove('active');
+        inputTitle.value  = '';
+        closeTx();
     });
-    
-    // Form Submit: Category
-    formCat.addEventListener('submit', (e) => {
+
+    formCat.addEventListener('submit', e => {
         e.preventDefault();
-        
-        const newCat = inputNewCat.value.trim();
-        if (newCat && !categories.includes(newCat)) {
-            categories.push(newCat);
-            saveCategories();
-            populateCategories();
-            selectCategoryEl.value = newCat; // Select the newly added
+        const name = inputNewCat.value.trim();
+        if (name && !categories.includes(name)) {
+            categories.push(name);
+            saveCats();
+            populateCats();
+            selectCatEl.value = name;
         }
-        
         inputNewCat.value = '';
-        modalCat.classList.remove('active');
+        closeCat();
     });
-    
-    // Clear Data
-    btnClearData.addEventListener('click', () => {
-        if (confirm('🚨 คำเตือน! คุณแน่ใจหรือไม่ว่าต้องการ "ล้างข้อมูลรายการทั้งหมด" ย้อนกลับเป็นศูนย์? (ข้อมูลจะหายไปถาวร)')) {
-            transactions = [];
-            // Optional: reset categories to default? No, usually users want to keep their custom categories.
-            saveTransactions();
-            populateYears();
-            updateUI();
+
+    // ---- Clear Data (long-press on balance or dedicated button) ----
+    // No dedicated button in new design — keep safety via console or add one later
+    // Add an easter egg: tap balance 5 times to clear
+    let tapCount = 0;
+    totalBalanceEl.addEventListener('click', () => {
+        tapCount++;
+        if (tapCount >= 7) {
+            tapCount = 0;
+            if (confirm('🚨 ล้างข้อมูลรายการทั้งหมด? (ย้อนกลับไม่ได้)')) {
+                transactions = [];
+                save(); populateYears(); updateUI();
+            }
         }
     });
-    
-    // ---- Utilities ----
-    function generateID() {
-        return Math.floor(Math.random() * 1000000000).toString(16);
-    }
-    
-    function registerServiceWorker() {
+
+    // ---- Utility ----
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+    function registerSW() {
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW err', err));
-            });
+            navigator.serviceWorker.register('sw.js').catch(() => {});
         }
     }
+
+    init();
 });
