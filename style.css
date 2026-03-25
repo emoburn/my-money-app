@@ -36,7 +36,10 @@ body {
     line-height: 1.5;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
     font-family: var(--font-heading);
     font-weight: 500;
 }
@@ -103,7 +106,8 @@ h1, h2, h3, h4 {
     gap: 16px;
 }
 
-.income-summary, .expense-summary {
+.income-summary,
+.expense-summary {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -129,7 +133,8 @@ h1, h2, h3, h4 {
     color: var(--expense);
 }
 
-.income-summary p, .expense-summary p {
+.income-summary p,
+.expense-summary p {
     font-size: 12px;
     color: var(--text-secondary);
 }
@@ -226,7 +231,7 @@ h1, h2, h3, h4 {
     background: var(--bg-card);
     border-radius: var(--radius-md);
     margin-top: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
 }
 
@@ -237,28 +242,66 @@ h1, h2, h3, h4 {
     font-size: 11px;
 }
 
-.tx-table th, .tx-table td {
-    padding: 10px 4px;
+.tx-table th,
+.tx-table td {
+    padding: 10px 2px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     white-space: normal;
     vertical-align: middle;
-    line-height: 1.2;
+    line-height: 1.6;
 }
 
 /* Distribute columns strictly to prevent overflow */
-.tx-table th:nth-child(1), .tx-table td:nth-child(1) { width: 28px; text-align: center; }
-.tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: auto; word-break: break-word; }
-.tx-table th:nth-child(3), .tx-table td:nth-child(3) { width: 17%; text-align: right; overflow-wrap: break-word; }
-.tx-table th:nth-child(4), .tx-table td:nth-child(4) { width: 17%; text-align: right; overflow-wrap: break-word; }
-.tx-table th:nth-child(5), .tx-table td:nth-child(5) { width: 17%; text-align: right; overflow-wrap: break-word; }
-.tx-table th:nth-child(6), .tx-table td:nth-child(6) { width: 13%; text-align: center; overflow-wrap: break-word; }
-.tx-table th:nth-child(7), .tx-table td:nth-child(7) { width: 30px; text-align: center; }
+.tx-table th:nth-child(1),
+.tx-table td:nth-child(1) {
+    width: 20px;
+    text-align: center;
+}
+
+.tx-table th:nth-child(2),
+.tx-table td:nth-child(2) {
+    width: auto;
+    word-break: break-word;
+}
+
+.tx-table th:nth-child(3),
+.tx-table td:nth-child(3) {
+    width: 17%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tx-table th:nth-child(4),
+.tx-table td:nth-child(4) {
+    width: 17%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tx-table th:nth-child(5),
+.tx-table td:nth-child(5) {
+    width: 18%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tx-table th:nth-child(6),
+.tx-table td:nth-child(6) {
+    width: 12%;
+    text-align: center;
+}
+
+.tx-table th:nth-child(7),
+.tx-table td:nth-child(7) {
+    width: 24px;
+    text-align: center;
+}
 
 .tx-table th {
     color: var(--text-secondary);
     font-weight: 500;
-    font-size: 10px;
+    font-size: 9px;
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -272,19 +315,29 @@ h1, h2, h3, h4 {
 
 .tx-amount {
     font-weight: 600;
-    font-size: 11px;
+    font-size: 9px;
+    letter-spacing: -0.2px;
 }
 
-.tx-amount.income { color: var(--income); }
-.tx-amount.expense { color: var(--expense); }
-.tx-amount.neutral { color: var(--text-primary); }
+.tx-amount.income {
+    color: var(--income);
+}
+
+.tx-amount.expense {
+    color: var(--expense);
+}
+
+.tx-amount.neutral {
+    color: var(--text-primary);
+}
 
 .tag-category {
     background: rgba(255, 255, 255, 0.1);
-    padding: 4px 8px;
+    padding: 2px 4px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 8px;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .empty-state {
@@ -341,8 +394,14 @@ h1, h2, h3, h4 {
         right: calc(50% - 280px);
         transform: none;
     }
-    .fab:hover { transform: scale(1.05); }
-    .fab:active { transform: scale(0.95); }
+
+    .fab:hover {
+        transform: scale(1.05);
+    }
+
+    .fab:active {
+        transform: scale(0.95);
+    }
 }
 
 /* Modals */
@@ -426,7 +485,9 @@ h1, h2, h3, h4 {
     margin-bottom: 8px;
 }
 
-input[type="text"], input[type="number"], select {
+input[type="text"],
+input[type="number"],
+select {
     width: 100%;
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -438,7 +499,8 @@ input[type="text"], input[type="number"], select {
     transition: var(--transition);
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: var(--accent);
 }
@@ -507,13 +569,13 @@ input:focus, select:focus {
     font-weight: 500;
 }
 
-#type-income:checked + .type-btn {
+#type-income:checked+.type-btn {
     background: var(--income-bg);
     border-color: var(--income);
     color: var(--income);
 }
 
-#type-expense:checked + .type-btn {
+#type-expense:checked+.type-btn {
     background: var(--expense-bg);
     border-color: var(--expense);
     color: var(--expense);
