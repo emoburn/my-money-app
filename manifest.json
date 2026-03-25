@@ -1,0 +1,17 @@
+{
+  "name": "บันทึกรายรับรายจ่าย",
+  "short_name": "MyMoney",
+  "description": "แอปพลิเคชันบันทึกรายรับรายจ่ายแบบไม่มีโฆษณา",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
