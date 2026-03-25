@@ -225,38 +225,58 @@ select.sleek-input {
 /* Responsive Beautiful Table */
 .table-responsive {
     background: transparent;
-    border-radius: var(--radius-md);
     width: 100%;
     margin-bottom: 24px;
+    overflow-x: auto;
+    /* Hide scrollbar visually but keep scroll functionality */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.table-responsive::-webkit-scrollbar {
+    display: none;
+}
+
+/* Subtle scroll hint shadow on right edge */
+.table-responsive::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    top: 0;
+    width: 24px;
+    pointer-events: none;
 }
 
 .tx-table {
+    min-width: 480px; /* Min width so it is always readable, triggers scroll on small screens */
     width: 100%;
     table-layout: fixed;
     border-collapse: separate;
-    border-spacing: 0 8px; /* Adds physical sleek spacing between rows! */
+    border-spacing: 0 8px;
 }
 
 .tx-table th {
-    padding: 0 4px 8px;
+    padding: 0 8px 10px;
     text-align: left;
     color: var(--text-secondary);
     font-weight: 400;
     font-size: 11px;
     border: none;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .tx-table td {
-    padding: 14px 4px;
-    background: var(--bg-card); /* Each row is its own beautiful card */
+    padding: 14px 8px;
+    background: var(--bg-card);
     vertical-align: middle;
-    line-height: 1.4;
+    line-height: 1.5;
+    white-space: nowrap;
 }
 
-/* Create rounded pill effect for rows */
-.tx-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; padding-left: 12px; }
-.tx-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; padding-right: 12px; }
+/* Rounded pill row effect */
+.tx-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; padding-left: 14px; }
+.tx-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; padding-right: 14px; }
 
 /* Action Buttons in Table */
 .btn-icon-custom {
@@ -267,10 +287,10 @@ select.sleek-input {
     align-items: center;
     justify-content: center;
     transition: var(--transition);
+    padding: 4px;
 }
 
 .btn-star svg {
-    color: var(--text-secondary);
     stroke: var(--text-secondary);
 }
 
@@ -283,30 +303,32 @@ select.sleek-input {
     stroke: #FF5252;
 }
 
-/* Layout definitions */
-.tx-table th:nth-child(1), .tx-table td:nth-child(1) { width: 36px; text-align: center; } /* Star */
-.tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: auto; } /* Title/Date */
-.tx-table th:nth-child(3), .tx-table td:nth-child(3) { width: 17%; text-align: right; } /* Income */
-.tx-table th:nth-child(4), .tx-table td:nth-child(4) { width: 17%; text-align: right; } /* Expense */
-.tx-table th:nth-child(5), .tx-table td:nth-child(5) { width: 18%; text-align: right; } /* Balance */
-.tx-table th:nth-child(6), .tx-table td:nth-child(6) { width: 14%; text-align: center; } /* Category */
-.tx-table th:nth-child(7), .tx-table td:nth-child(7) { width: 36px; text-align: center; } /* Delete */
+/* Fixed column widths for clean layout */
+.tx-table th:nth-child(1), .tx-table td:nth-child(1) { width: 34px; text-align: center; }
+.tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 130px; white-space: normal; }
+.tx-table th:nth-child(3), .tx-table td:nth-child(3) { width: 90px; text-align: right; }
+.tx-table th:nth-child(4), .tx-table td:nth-child(4) { width: 90px; text-align: right; }
+.tx-table th:nth-child(5), .tx-table td:nth-child(5) { width: 90px; text-align: right; }
+.tx-table th:nth-child(6), .tx-table td:nth-child(6) { width: 70px; text-align: center; }
+.tx-table th:nth-child(7), .tx-table td:nth-child(7) { width: 34px; text-align: center; }
 
 /* Typography for Table Cells */
 .tx-title {
     font-size: 13px;
     color: var(--text-primary);
     font-weight: 500;
+    white-space: normal;
     word-break: break-word;
     margin-bottom: 3px;
 }
+
 .tx-date {
     font-size: 11px;
     color: var(--text-secondary);
 }
 
 .tx-amount {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -318,13 +340,14 @@ select.sleek-input {
 .text-center { text-align: center !important; }
 
 .tag-category {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 3px 6px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 8px;
     border-radius: 6px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-secondary);
     white-space: nowrap;
+    display: inline-block;
 }
 
 /* Empty State */
