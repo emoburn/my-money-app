@@ -1,7 +1,7 @@
 // Increment this version EVERY TIME you update the app's files
 // The browser will detect the change, delete old cache, and re-download fresh files
 // WITHOUT touching localStorage (your transaction data is safe!)
-const CACHE_VERSION = 'mymoney-v8';
+const CACHE_VERSION = 'mymoney-v9';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -9,7 +9,10 @@ const ASSETS_TO_CACHE = [
     './style.css',
     './app.js',
     './icon.svg',
-    './manifest.json'
+    './manifest.json',
+    './budget.html',
+    './budget.css',
+    './budget.js'
 ];
 
 // Install: cache all fresh assets
