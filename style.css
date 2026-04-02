@@ -422,6 +422,52 @@ option { background: #1C2438; color: white; }
     pointer-events: none;
 }
 
+/* Main page nav bar (3-slot layout) */
+.main-bottom-bar {
+    justify-content: space-around;
+    background: rgba(10,15,30,0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    height: 70px;
+    max-width: 480px;
+    margin: 0 auto;
+    pointer-events: all;
+}
+
+.nav-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-3);
+    text-decoration: none;
+    font-family: var(--font-th);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 6px 20px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab svg { transition: stroke 0.2s; }
+
+.nav-tab.active {
+    color: var(--accent);
+}
+
+.nav-tab.active svg { stroke: var(--accent); }
+
+.nav-tab:not(.active):hover {
+    color: var(--text-2);
+    background: rgba(255,255,255,0.05);
+}
+
 .fab-center {
     width: 60px; height: 60px;
     background: var(--accent);
