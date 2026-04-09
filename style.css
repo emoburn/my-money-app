@@ -737,3 +737,608 @@ option { background: #1C2438; color: white; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-surface); border-radius: 4px; }
+
+/* ===========================
+   INCOME SUBTYPE TOGGLE
+=========================== */
+.income-subtype-row {
+    margin-bottom: 20px;
+}
+
+.subtype-toggle {
+    display: flex;
+    gap: 0;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    border: 1px solid var(--border);
+}
+
+.subtype-toggle input { display: none; }
+
+.subtype-toggle label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-family: var(--font-th);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+.subtype-icon { font-size: 16px; }
+
+#income-prop:checked ~ label[for="income-prop"] {
+    background: rgba(0, 214, 143, 0.18);
+    color: var(--income);
+    box-shadow: 0 2px 10px rgba(0, 214, 143, 0.2);
+}
+
+#income-nonprop:checked ~ label[for="income-nonprop"] {
+    background: rgba(108, 99, 255, 0.18);
+    color: var(--accent);
+    box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+}
+
+/* ===========================
+   PERIOD SUB LABEL
+=========================== */
+.period-sub-label {
+    font-size: 10px;
+    color: var(--income);
+    margin-top: 2px;
+    font-family: var(--font-th);
+    opacity: 0.8;
+}
+
+/* ===========================
+   TRANSACTION BADGES
+=========================== */
+.tx-prop-badge {
+    font-size: 9px;
+    font-family: var(--font-th);
+    background: rgba(0, 214, 143, 0.15);
+    color: var(--income);
+    border: 1px solid rgba(0, 214, 143, 0.3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.6;
+}
+
+.tx-nonprop-badge {
+    font-size: 9px;
+    font-family: var(--font-th);
+    background: rgba(108, 99, 255, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.6;
+}
+
+.tx-pct-badge {
+    font-size: 9px;
+    font-family: var(--font-th);
+    background: rgba(255, 209, 102, 0.12);
+    color: var(--gold);
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.6;
+}
+
+/* ===========================
+   BUDGET PANEL
+=========================== */
+.budget-panel {
+    margin: 0 16px 4px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: fadeSlideIn 0.35s var(--ease);
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.bp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.bp-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-th);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.bp-prop-income {
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+}
+
+.bp-prop-income strong {
+    color: var(--income);
+    font-weight: 700;
+}
+
+.bp-warning {
+    margin: 8px 16px 0;
+    padding: 8px 12px;
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid rgba(255, 77, 109, 0.25);
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-family: var(--font-th);
+    color: var(--expense);
+    line-height: 1.5;
+}
+
+.bp-cats {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bp-cat-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+}
+
+.bp-cat-card:hover { border-color: rgba(108, 99, 255, 0.3); }
+
+.bp-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.bp-cat-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-th);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+}
+
+.bp-cat-icon { font-size: 16px; }
+
+.bp-over-badge {
+    font-size: 9px;
+    font-family: var(--font-th);
+    background: rgba(255, 77, 109, 0.15);
+    color: var(--expense);
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.bp-edit-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.bp-edit-btn:hover {
+    background: rgba(108, 99, 255, 0.12);
+    color: var(--accent);
+    border-color: rgba(108, 99, 255, 0.3);
+}
+
+.bp-alloc-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.bp-alloc-badge {
+    font-size: 11px;
+    font-family: var(--font-th);
+    background: rgba(108, 99, 255, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-weight: 500;
+}
+
+.bp-no-income-note {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+    font-style: italic;
+}
+
+/* Progress Bar */
+.bp-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.bp-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.bp-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), #9B8FFF);
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    min-width: 2px;
+}
+
+.bp-bar-fill.over {
+    background: linear-gradient(90deg, var(--expense), #FF8FA3);
+}
+
+.bp-bar-pct {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 38px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.bp-bar-pct.over { color: var(--expense); }
+
+/* Stats Row */
+.bp-stats-row {
+    display: flex;
+    gap: 16px;
+}
+
+.bp-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.bp-stat-label {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+}
+
+.bp-stat-val {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-th);
+}
+
+/* Unallocated section */
+.bp-unalloc-section {
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+}
+
+.bp-unalloc-title {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+    margin-bottom: 8px;
+}
+
+.bp-unalloc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bp-unalloc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-family: var(--font-th);
+    color: var(--text-2);
+    background: var(--bg-surface);
+    border-radius: var(--radius-xs);
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+}
+
+/* ===========================
+   BUDGET ALLOC ROW (modal)
+=========================== */
+.budget-alloc-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.alloc-toggle {
+    display: flex;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.alloc-toggle input { display: none; }
+
+.alloc-toggle label {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: var(--font-th);
+}
+
+.alloc-toggle input:checked + label {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 2px 8px rgba(108, 99, 255, 0.35);
+}
+
+.alloc-input { flex: 1; }
+
+.alloc-hint {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+/* ===========================
+   SEARCH BAR + DATA ACTIONS
+=========================== */
+.search-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px 4px;
+}
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    transition: border-color 0.2s;
+}
+
+.search-bar:focus-within {
+    border-color: var(--accent);
+    background: rgba(108, 99, 255, 0.04);
+}
+
+.search-bar svg { color: var(--text-3); flex-shrink: 0; }
+
+.search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-1);
+    font-size: 14px;
+    font-family: var(--font-th);
+}
+
+.search-bar input::placeholder { color: var(--text-3); }
+
+.btn-clear-search {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+.btn-clear-search:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+
+.data-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.btn-data-action {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    border-radius: var(--radius-xs);
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: var(--font-th);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-data-action:hover {
+    background: rgba(108, 99, 255, 0.12);
+    border-color: rgba(108, 99, 255, 0.3);
+    color: var(--accent);
+}
+
+/* ===========================
+   TRANSACTION NOTE
+=========================== */
+.tx-note {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+    margin-top: 4px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* ===========================
+   EDIT TX TYPE BADGE
+=========================== */
+.edit-tx-type-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.edit-type-badge {
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.edit-type-badge.income-type {
+    background: var(--income-bg);
+    color: var(--income);
+}
+
+.edit-type-badge.expense-type {
+    background: var(--expense-bg);
+    color: var(--expense);
+}
+
+.edit-subtype-info {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+}
+
+/* ===========================
+   ROLLOVER FEATURE
+=========================== */
+.rollover-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-rollover {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 209, 102, 0.1);
+    border: 1px solid rgba(255, 209, 102, 0.3);
+    color: var(--gold);
+    border-radius: var(--radius-xs);
+    padding: 7px 12px;
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+    white-space: nowrap;
+}
+
+.btn-rollover:hover:not(:disabled) {
+    background: rgba(255, 209, 102, 0.2);
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+.btn-rollover:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.rollover-status {
+    font-size: 11px;
+    font-family: var(--font-th);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.rollover-status.positive {
+    color: var(--income);
+    background: rgba(0, 214, 143, 0.1);
+    border: 1px solid rgba(0, 214, 143, 0.2);
+}
+
+.rollover-status.done {
+    color: var(--text-2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+}
+
+.rollover-status.zero {
+    color: var(--text-3);
+}
+
+/* Rollover badge on transaction card */
+.tx-rollover-badge {
+    font-size: 9px;
+    font-family: var(--font-th);
+    font-weight: 600;
+    background: rgba(255, 209, 102, 0.15);
+    color: var(--gold);
+    border: 1px solid rgba(255, 209, 102, 0.35);
+    border-radius: 4px;
+    padding: 1px 6px;
+    line-height: 1.6;
+}
+
+/* Highlight rollover transaction card */
+.tx-card.income.rollover {
+    border-left-color: var(--gold);
+}
+.tx-card.income.rollover::before {
+    background: var(--gold);
+}

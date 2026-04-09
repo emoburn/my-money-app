@@ -72,10 +72,20 @@
         <!-- Add Category Button -->
         <div class="section-header">
             <h3 class="section-title">หมวดหมู่งบประมาณ</h3>
-            <button id="btn-add-cat-budget" class="btn-add-cat-budget">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                เพิ่มหมวดหมู่
-            </button>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button id="btn-export-budget" class="btn-data-action" title="Export ข้อมูลงบ" style="padding: 6px 8px;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button id="btn-import-budget" class="btn-data-action" title="Import ข้อมูลงบ" style="padding: 6px 8px;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </button>
+                <input type="file" id="import-budget-file-input" accept=".json" class="hidden">
+                
+                <button id="btn-add-cat-budget" class="btn-add-cat-budget">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    เพิ่มหมวดหมู่
+                </button>
+            </div>
         </div>
 
         <!-- Categories List -->

@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyEl            = document.getElementById('budget-empty');
     const btnAddCatBudget    = document.getElementById('btn-add-cat-budget');
     const btnResetBudget     = document.getElementById('btn-reset-budget');
+    const btnExportBudget    = document.getElementById('btn-export-budget');
+    const btnImportBudget    = document.getElementById('btn-import-budget');
+    const importBudgetFileInput = document.getElementById('import-budget-file-input');
 
     // Modal: Add Category
     const modalAddCat    = document.getElementById('modal-add-cat');
@@ -443,6 +446,56 @@ document.addEventListener('DOMContentLoaded', () => {
             if (i >= frames.length) { clearInterval(anim); el.style.transform = ''; }
         }, 60);
         el.focus();
+    }
+
+    // ---- Export / Import Data ----
+    if (btnExportBudget) {
+        btnExportBudget.addEventListener('click', () => {
+            const dataStr = JSON.stringify({
+                totalBudget,
+                categories,
+                version: 1,
+                exportDate: new Date().toISOString()
+            }, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `budget-planner-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    if (btnImportBudget && importBudgetFileInput) {
+        btnImportBudget.addEventListener('click', () => importBudgetFileInput.click());
+        importBudgetFileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.totalBudget !== undefined && Array.isArray(data.categories)) {
+                        totalBudget = data.totalBudget;
+                        categories = data.categories;
+                        saveBudget();
+                        saveCats();
+                        inputTotalBudget.value = totalBudget > 0 ? totalBudget : '';
+                        renderCategories();
+                        alert('✅ นำเข้าข้อมูลสำเร็จ');
+                    } else {
+                        alert('❌ รูปแบบไฟล์นำเข้าไม่ถูกต้อง');
+                    }
+                } catch (err) {
+                    alert('❌ ไม่สามารถอ่านไฟล์นี้ได้ (JSON ไม่ถูกต้อง)');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
     }
 
     // ---- Init ----
