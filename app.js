@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labelIncomeEl = document.getElementById('label-income');
     const labelExpenseEl = document.getElementById('label-expense');
     const labelIncomePropEl = document.getElementById('label-income-prop');
+    const labelIncomeNonpropEl = document.getElementById('label-income-nonprop');
     const txListEl = document.getElementById('tx-list');
     const emptyStateEl = document.getElementById('empty-state');
     const emptyTextEl = document.getElementById('empty-text');
@@ -247,26 +248,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const periodInc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
         const periodPropInc = filtered.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
+        const periodNonpropInc = filtered.filter(t => t.type === 'income' && t.incomeSubtype !== 'proportional').reduce((s, t) => s + t.amount, 0);
         const periodExp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
-        // ALL-TIME proportional income & expenses (not filtered by period) for budget panel
+        // ALL-TIME figures for budget panel (never filtered by period)
         const allTimePropInc = transactions.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
         const allTimeCatSpent = {};
         transactions.filter(t => t.type === 'expense').forEach(t => {
             allTimeCatSpent[t.category] = (allTimeCatSpent[t.category] || 0) + t.amount;
         });
 
-        labelIncomeEl.textContent = labelSuffix ? `รายรับ (${labelSuffix})` : 'รายรับ';
-        labelExpenseEl.textContent = labelSuffix ? `รายจ่าย (${labelSuffix})` : 'รายจ่าย';
-        totalIncomeEl.textContent = '฿' + formatMoney(periodInc);
-        totalExpenseEl.textContent = '฿' + formatMoney(periodExp);
+        labelIncomeEl.textContent = labelSuffix ? `\u0e23\u0e32\u0e22\u0e23\u0e31\u0e1a (${labelSuffix})` : '\u0e23\u0e32\u0e22\u0e23\u0e31\u0e1a';
+        labelExpenseEl.textContent = labelSuffix ? `\u0e23\u0e32\u0e22\u0e08\u0e48\u0e32\u0e22 (${labelSuffix})` : '\u0e23\u0e32\u0e22\u0e08\u0e48\u0e32\u0e22';
+        totalIncomeEl.textContent = '\u0e3f' + formatMoney(periodInc);
+        totalExpenseEl.textContent = '\u0e3f' + formatMoney(periodExp);
 
-        // Show proportional income sub-label (show all-time)
-        if (allTimePropInc > 0) {
-            labelIncomePropEl.textContent = `คิดสัดส่วน (ทั้งหมด) ฿${formatMoney(allTimePropInc)}`;
-            labelIncomePropEl.classList.remove('hidden');
+        // Income breakdown sub-labels: always match the same period as the main income number
+        if (periodInc > 0) {
+            if (periodPropInc > 0 && periodNonpropInc > 0) {
+                labelIncomePropEl.textContent = `\u0e2a\u0e31\u0e14\u0e2a\u0e48\u0e27\u0e19 \u0e3f${formatMoney(periodPropInc)}`;
+                labelIncomeNonpropEl.textContent = `\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b \u0e3f${formatMoney(periodNonpropInc)}`;
+                labelIncomePropEl.classList.remove('hidden');
+                labelIncomeNonpropEl.classList.remove('hidden');
+            } else if (periodPropInc > 0) {
+                labelIncomePropEl.textContent = `\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e07\u0e34\u0e19\u0e04\u0e34\u0e14\u0e2a\u0e31\u0e14\u0e2a\u0e48\u0e27\u0e19`;
+                labelIncomePropEl.classList.remove('hidden');
+                labelIncomeNonpropEl.classList.add('hidden');
+            } else if (periodNonpropInc > 0) {
+                labelIncomePropEl.textContent = `\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e07\u0e34\u0e19\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b`;
+                labelIncomePropEl.classList.remove('hidden');
+                labelIncomeNonpropEl.classList.add('hidden');
+            }
         } else {
             labelIncomePropEl.classList.add('hidden');
+            labelIncomeNonpropEl.classList.add('hidden');
         }
 
         // Budget panel — always uses all-time figures
@@ -331,12 +346,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         budgetPanelEl.classList.remove('hidden');
 
+        // Compute total allocated baht & remaining unallocated
+        const totalAllocBaht = catsWithAlloc.reduce((s, c) => s + (getCatBudgetBaht(c, propIncome) || 0), 0);
+        const unallocated = propIncome - totalAllocBaht;
+
         let html = `<div class="bp-header">
             <div class="bp-title">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
                 สัดส่วนงบประมาณ (สะสมทั้งหมด)
             </div>
             <div class="bp-prop-income">รายรับคิดสัดส่วนรวม <strong>฿${formatMoney(propIncome)}</strong></div>
+            ${propIncome > 0 ? `<div class="bp-unalloc-summary ${unallocated < 0 ? 'over' : ''}">
+                <span>ยังไม่ได้จัดสรรหมวด</span>
+                <strong class="${unallocated >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(Math.abs(unallocated))}${unallocated < 0 ? ' (เกิน)' : ''}</strong>
+            </div>` : ''}
         </div>`;
 
         // Warning if over-allocated
