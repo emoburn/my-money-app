@@ -182,9 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'daily')   filterDailyEl.classList.remove('hidden');
         if (mode === 'monthly') filterMonthEl.classList.remove('hidden');
         if (mode === 'yearly')  filterYearEl.classList.remove('hidden');
-        // Show rollover button only in monthly mode
-        const rolloverRow = document.getElementById('rollover-row');
-        if (rolloverRow) rolloverRow.classList.toggle('hidden', mode !== 'monthly');
         updateUI();
     }
 
@@ -250,24 +247,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const periodPropInc = filtered.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
         const periodExp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
+        // ALL-TIME proportional income & expenses (not filtered by period) for budget panel
+        const allTimePropInc = transactions.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
+        const allTimeCatSpent = {};
+        transactions.filter(t => t.type === 'expense').forEach(t => {
+            allTimeCatSpent[t.category] = (allTimeCatSpent[t.category] || 0) + t.amount;
+        });
+
         labelIncomeEl.textContent = labelSuffix ? `รายรับ (${labelSuffix})` : 'รายรับ';
         labelExpenseEl.textContent = labelSuffix ? `รายจ่าย (${labelSuffix})` : 'รายจ่าย';
         totalIncomeEl.textContent = '฿' + formatMoney(periodInc);
         totalExpenseEl.textContent = '฿' + formatMoney(periodExp);
 
-        // Show proportional income sub-label
-        if (periodPropInc > 0 || periodInc !== periodPropInc) {
-            labelIncomePropEl.textContent = `คิดสัดส่วน ฿${formatMoney(periodPropInc)}`;
+        // Show proportional income sub-label (show all-time)
+        if (allTimePropInc > 0) {
+            labelIncomePropEl.textContent = `คิดสัดส่วน (ทั้งหมด) ฿${formatMoney(allTimePropInc)}`;
             labelIncomePropEl.classList.remove('hidden');
         } else {
             labelIncomePropEl.classList.add('hidden');
         }
 
-        // Budget panel
-        renderBudgetPanel(filtered, periodPropInc);
-
-        // Rollover status
-        updateRolloverStatus();
+        // Budget panel — always uses all-time figures
+        renderBudgetPanel(allTimeCatSpent, allTimePropInc);
 
         // Render list
         txListEl.innerHTML = '';
@@ -291,10 +292,10 @@ document.addEventListener('DOMContentLoaded', () => {
             grouped[tx.date].push(tx);
         });
 
-        // Compute category spent for badge display
-        const catSpent = {};
-        filtered.filter(t => t.type === 'expense').forEach(t => {
-            catSpent[t.category] = (catSpent[t.category] || 0) + t.amount;
+        // Compute all-time category spent for badge display in cards
+        const catSpentAllTime = {};
+        transactions.filter(t => t.type === 'expense').forEach(t => {
+            catSpentAllTime[t.category] = (catSpentAllTime[t.category] || 0) + t.amount;
         });
 
         Object.keys(grouped).sort((a, b) => b.localeCompare(a)).forEach(date => {
@@ -304,12 +305,14 @@ document.addEventListener('DOMContentLoaded', () => {
             header.textContent = dateObj.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: '2-digit' });
             txListEl.appendChild(header);
 
-            grouped[date].forEach(tx => txListEl.appendChild(buildCard(tx, periodPropInc, catSpent)));
+            grouped[date].forEach(tx => txListEl.appendChild(buildCard(tx, allTimePropInc, catSpentAllTime)));
         });
     }
 
     // ---- Budget Panel ----
-    function renderBudgetPanel(filtered, propIncome) {
+    // catSpentMap: { catName: totalSpent } สะสมตลอดเวลา
+    // propIncome: รายรับที่คิดสัดส่วนสะสมตลอดเวลา
+    function renderBudgetPanel(catSpentMap, propIncome) {
         // Only show if there are categories with allocations OR if propIncome > 0
         const catsWithAlloc = categories.filter(c => c.allocType && c.allocValue > 0);
         if (catsWithAlloc.length === 0 && propIncome === 0) {
@@ -324,19 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return s + (p || 0);
         }, 0);
 
-        const catSpentMap = {};
-        filtered.filter(t => t.type === 'expense').forEach(t => {
-            catSpentMap[t.category] = (catSpentMap[t.category] || 0) + t.amount;
-        });
-
         budgetPanelEl.classList.remove('hidden');
 
         let html = `<div class="bp-header">
             <div class="bp-title">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-                สัดส่วนงบประมาณ
+                สัดส่วนงบประมาณ (สะสมทั้งหมด)
             </div>
-            <div class="bp-prop-income">รายรับคิดสัดส่วน <strong>฿${formatMoney(propIncome)}</strong></div>
+            <div class="bp-prop-income">รายรับคิดสัดส่วนรวม <strong>฿${formatMoney(propIncome)}</strong></div>
         </div>`;
 
         // Warning if over-allocated
@@ -422,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isIncome = tx.type === 'income';
         const sign = isIncome ? '+' : '-';
         const card = document.createElement('div');
-        card.className = `tx-card ${tx.type}${tx.isRollover ? ' rollover' : ''}`;
+        card.className = `tx-card ${tx.type}`;
 
         // For expense: find cat allocation to show % used of category budget
         let pctInfo = '';
@@ -439,11 +437,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Income subtype / rollover badge
+        // Income subtype badge
         let incomeBadge = '';
-        if (tx.isRollover) {
-            incomeBadge = `<span class="tx-rollover-badge">🔄 ยกมา</span>`;
-        } else if (isIncome && tx.incomeSubtype === 'proportional') {
+        if (isIncome && tx.incomeSubtype === 'proportional') {
             incomeBadge = `<span class="tx-prop-badge">คิดสัดส่วน</span>`;
         } else if (isIncome && tx.incomeSubtype === 'non-proportional') {
             incomeBadge = `<span class="tx-nonprop-badge">ไม่คิดสัดส่วน</span>`;
@@ -683,19 +679,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Helpers ----
     function getCurrentPropIncome() {
-        // Use transactions of the current filter to get proportional income
-        let filtered = [...transactions];
-        if (activeMode === 'daily') {
-            const d = filterDailyEl.value;
-            filtered = filtered.filter(tx => tx.date === d);
-        } else if (activeMode === 'monthly') {
-            const m = filterMonthEl.value;
-            filtered = filtered.filter(tx => tx.date.startsWith(m));
-        } else if (activeMode === 'yearly') {
-            const y = filterYearEl.value;
-            filtered = filtered.filter(tx => tx.date.startsWith(y));
-        }
-        return filtered.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
+        // Always use ALL-TIME proportional income for budget calculations
+        return transactions.filter(t => t.type === 'income' && t.incomeSubtype === 'proportional').reduce((s, t) => s + t.amount, 0);
     }
 
     function validateTotalAlloc(newCat, replacingCatName, propIncome) {
@@ -711,90 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { ok: total <= 100.005, total };
     }
 
-    // ---- Rollover Feature ----
-    const btnRollover     = document.getElementById('btn-rollover');
-    const rolloverStatus  = document.getElementById('rollover-status');
-
-    function updateRolloverStatus() {
-        if (!rolloverStatus || activeMode !== 'monthly') return;
-        const m = filterMonthEl.value;
-        if (!m) return;
-        const [y, mo] = m.split('-').map(Number);
-        // Next month
-        const nextDate = new Date(y, mo, 1); // mo is already 1-based, Date(y, mo) = next month
-        const nextYY   = nextDate.getFullYear();
-        const nextMM   = String(nextDate.getMonth() + 1).padStart(2, '0');
-        const nextKey  = `${nextYY}-${nextMM}`;
-        // Check if rollover already exists for this source month
-        const existingRollover = transactions.find(t =>
-            t.isRollover && t.rolloverSource === m
-        );
-        // Calculate net balance for selected month
-        const monthTx  = transactions.filter(t => t.date.startsWith(m) && !t.isRollover);
-        const netInc   = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-        const netExp   = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-        const surplus  = netInc - netExp;
-        if (existingRollover) {
-            rolloverStatus.textContent = `✅ ยกไปแล้ว ฿${formatMoney(existingRollover.amount)}`;
-            rolloverStatus.className = 'rollover-status done';
-            if (btnRollover) btnRollover.disabled = true;
-        } else if (surplus > 0) {
-            rolloverStatus.textContent = `เงินเหลือ ฿${formatMoney(surplus)} → เดือนถัดไป`;
-            rolloverStatus.className = 'rollover-status positive';
-            if (btnRollover) btnRollover.disabled = false;
-        } else {
-            rolloverStatus.textContent = surplus < 0
-                ? `ติดลบ ฿${formatMoney(Math.abs(surplus))} — ไม่มีเงินยก`
-                : 'ไม่มีรายการในเดือนนี้';
-            rolloverStatus.className = 'rollover-status zero';
-            if (btnRollover) btnRollover.disabled = true;
-        }
-    }
-
-    if (btnRollover) {
-        btnRollover.addEventListener('click', () => {
-            const m = filterMonthEl.value;
-            if (!m) return;
-            const [y, mo] = m.split('-').map(Number);
-            const nextDate = new Date(y, mo, 1);
-            const nextYY   = nextDate.getFullYear();
-            const nextMM   = String(nextDate.getMonth() + 1).padStart(2, '0');
-            const nextDay1 = `${nextYY}-${nextMM}-01`;
-            // Calculate surplus
-            const monthTx = transactions.filter(t => t.date.startsWith(m) && !t.isRollover);
-            const netInc  = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            const netExp  = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-            const surplus = netInc - netExp;
-            if (surplus <= 0) { alert('ไม่มีเงินเหลือที่จะยก'); return; }
-            // Source month label
-            const [sy, smo] = m.split('-');
-            const srcLabel = new Date(Number(sy), Number(smo) - 1, 1)
-                .toLocaleDateString('th-TH', { month: 'long', year: '2-digit' });
-            const destLabel = new Date(nextYY, Number(nextMM) - 1, 1)
-                .toLocaleDateString('th-TH', { month: 'long', year: '2-digit' });
-            if (!confirm(
-                `ยกเงินเหลือ ฿${formatMoney(surplus)}\n` +
-                `จากเดือน ${srcLabel} \u2192 ${destLabel}\n\n` +
-                `รายการนี้จะถูกบันทึกเป็นรายรับ "ไม่คิดสัดส่วน" ในเดือนถัดไป`
-            )) return;
-            const rolloverTx = {
-                id:             genId(),
-                type:           'income',
-                amount:         surplus,
-                title:          `เงินยกมาจาก ${srcLabel}`,
-                category:       'รายรับ',
-                date:           nextDay1,
-                timestamp:      Date.now(),
-                isStarred:      false,
-                incomeSubtype:  'non-proportional',
-                isRollover:     true,
-                rolloverSource: m
-            };
-            transactions.push(rolloverTx);
-            save(); populateYears(); updateUI();
-            alert(`✅ ยกเงินเหลือ ฿${formatMoney(surplus)} ไปเดือน ${destLabel} เรียบร้อยแล้ว`);
-        });
-    }
+    // Rollover feature removed — budget tracking is now continuous across all months
 
     // ---- Edit Transaction ----
     function openEditTx(txId) {
