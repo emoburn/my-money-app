@@ -255,6 +255,10 @@
             <form id="form-edit-cat-budget">
                 <input type="hidden" id="edit-cat-name">
                 <div class="field-row">
+                    <label>ชื่อหมวดหมู่</label>
+                    <input type="text" id="edit-cat-display-name" placeholder="ชื่อหมวดหมู่" required class="field-input">
+                </div>
+                <div class="field-row" style="margin-top:16px;">
                     <label>วงเงินของหมวดนี้</label>
                     <div class="budget-alloc-row">
                         <div class="alloc-toggle">
@@ -267,8 +271,11 @@
                     </div>
                     <p class="alloc-hint" id="edit-alloc-hint">สัดส่วน % จากรายรับที่นำมาคิดสัดส่วน</p>
                 </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn-save neutral-btn">บันทึก</button>
+                <div class="modal-actions" style="display:flex;gap:10px;">
+                    <button type="button" id="btn-delete-category" class="btn-save" style="flex:0 0 52px;background:rgba(255,77,109,0.15);color:var(--expense);box-shadow:none;border:1px solid rgba(255,77,109,0.3);" title="ลบหมวดหมู่">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    <button type="submit" class="btn-save neutral-btn" style="flex:1;">บันทึก</button>
                 </div>
             </form>
         </div>

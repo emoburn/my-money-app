@@ -53,10 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Edit cat budget modal
     const editCatName = document.getElementById('edit-cat-name');
     const editCatTitle = document.getElementById('edit-cat-budget-title');
+    const editCatDisplayName = document.getElementById('edit-cat-display-name');
     const editAllocPct = document.getElementById('edit-alloc-pct');
     const editAllocBaht = document.getElementById('edit-alloc-baht');
     const editAllocValue = document.getElementById('edit-alloc-value');
     const editAllocHint = document.getElementById('edit-alloc-hint');
+    const btnDeleteCategory = document.getElementById('btn-delete-category');
 
     // Edit transaction modal
     const modalEditTx = document.getElementById('modal-edit-tx');
@@ -558,7 +560,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const cat = categories.find(c => c.name === catName);
         if (!cat) return;
         editCatName.value = catName;
-        editCatTitle.textContent = `แก้ไขวงเงิน "${catName}"`;
+        editCatDisplayName.value = catName;
+        editCatTitle.textContent = `แก้ไขหมวดหมู่ "${catName}"`;
         editAllocValue.value = cat.allocValue || '';
         if (cat.allocType === 'baht') {
             editAllocBaht.checked = true;
@@ -567,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateAllocHint(editAllocPct, editAllocBaht, editAllocHint);
         modalEditCatBudget.classList.add('active');
-        setTimeout(() => editAllocValue.focus(), 300);
+        setTimeout(() => editCatDisplayName.focus(), 300);
     }
 
     btnFab.addEventListener('click', openTx);
@@ -649,9 +652,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formEditCatBudget.addEventListener('submit', e => {
         e.preventDefault();
-        const catName = editCatName.value;
-        const cat = categories.find(c => c.name === catName);
+        const oldName = editCatName.value;
+        const newName = editCatDisplayName.value.trim();
+        const cat = categories.find(c => c.name === oldName);
         if (!cat) return;
+
+        if (!newName) { alert('กรุณากรอกชื่อหมวดหมู่'); return; }
+
+        // Check duplicate name (only if name actually changed)
+        if (newName !== oldName && categories.find(c => c.name === newName)) {
+            alert('มีหมวดหมู่ชื่อนี้อยู่แล้ว');
+            return;
+        }
 
         const allocVal = parseFloat(editAllocValue.value);
         const allocType = editAllocPct.checked ? 'pct' : 'baht';
@@ -662,20 +674,49 @@ document.addEventListener('DOMContentLoaded', () => {
         // Validate total alloc
         if (newAllocType) {
             const propInc = getCurrentPropIncome();
-            const tempCat = { name: catName, allocType: newAllocType, allocValue: newAllocValue };
-            const check = validateTotalAlloc(tempCat, catName, propInc);
+            const tempCat = { name: newName, allocType: newAllocType, allocValue: newAllocValue };
+            const check = validateTotalAlloc(tempCat, oldName, propInc);
             if (!check.ok) {
                 alert(`วงเงินรวมทุกหมวดจะเกิน 100% (${formatPct(check.total)}%) กรุณาลดค่าลง`);
                 return;
             }
         }
 
+        // Apply changes
+        cat.name = newName;
         cat.allocType = newAllocType;
         cat.allocValue = newAllocValue;
+
+        // Rename category in all existing transactions
+        if (newName !== oldName) {
+            transactions.forEach(tx => {
+                if (tx.category === oldName) tx.category = newName;
+            });
+            save();
+        }
+
         saveCats();
+        populateCats();
         closeEditCat();
         updateUI();
     });
+
+    // Delete category
+    if (btnDeleteCategory) {
+        btnDeleteCategory.addEventListener('click', () => {
+            const catName = editCatName.value;
+            const txCount = transactions.filter(t => t.category === catName).length;
+            const msg = txCount > 0
+                ? `ลบหมวดหมู่ "${catName}"?\n(มีรายการ${txCount}รายการในหมวดนี้ จะยังคงอยู่แต่ไม่มีหมวด)`
+                : `ลบหมวดหมู่ "${catName}"?`;
+            if (!confirm(msg)) return;
+            categories = categories.filter(c => c.name !== catName);
+            saveCats();
+            populateCats();
+            closeEditCat();
+            updateUI();
+        });
+    }
 
     // ---- Helpers ----
     function getCurrentPropIncome() {
