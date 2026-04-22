@@ -109,6 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return tx;
     });
 
+    // Migrate existing categories: baht → pct using all-time propIncome
+    (function migrateCatsToPct() {
+        const propInc = transactions
+            .filter(t => t.type === 'income' && t.incomeSubtype === 'proportional')
+            .reduce((s, t) => s + t.amount, 0);
+        if (propInc <= 0) return;
+        let changed = false;
+        categories.forEach(c => {
+            if (c.allocType === 'baht' && c.allocValue > 0) {
+                c.allocValue = (c.allocValue / propInc) * 100;
+                c.allocType = 'pct';
+                changed = true;
+            }
+        });
+        if (changed) localStorage.setItem('mt_categories', JSON.stringify(categories));
+    })();
+
     let activeMode = 'monthly';
     let searchQuery = '';
 
@@ -646,12 +663,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const allocVal = parseFloat(inputAllocValue.value);
-        const allocType = allocPctRadio.checked ? 'pct' : 'baht';
-        const newCat = {
-            name,
-            allocType: (!isNaN(allocVal) && allocVal > 0) ? allocType : null,
-            allocValue: (!isNaN(allocVal) && allocVal > 0) ? allocVal : null
-        };
+        let allocType = allocPctRadio.checked ? 'pct' : 'baht';
+        let finalAllocValue = (!isNaN(allocVal) && allocVal > 0) ? allocVal : null;
+        let finalAllocType = finalAllocValue ? allocType : null;
+
+        // Auto-convert baht → pct so budget scales with future income
+        if (finalAllocType === 'baht' && finalAllocValue) {
+            const propInc = getCurrentPropIncome();
+            if (propInc > 0) {
+                finalAllocValue = (finalAllocValue / propInc) * 100;
+                finalAllocType = 'pct';
+            }
+        }
+
+        const newCat = { name, allocType: finalAllocType, allocValue: finalAllocValue };
 
         // Validate: total alloc should not exceed 100%
         if (newCat.allocType) {
@@ -689,10 +714,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const allocVal = parseFloat(editAllocValue.value);
-        const allocType = editAllocPct.checked ? 'pct' : 'baht';
+        let allocType = editAllocPct.checked ? 'pct' : 'baht';
 
-        const newAllocType = (!isNaN(allocVal) && allocVal > 0) ? allocType : null;
-        const newAllocValue = (!isNaN(allocVal) && allocVal > 0) ? allocVal : null;
+        let newAllocType = (!isNaN(allocVal) && allocVal > 0) ? allocType : null;
+        let newAllocValue = (!isNaN(allocVal) && allocVal > 0) ? allocVal : null;
+
+        // Auto-convert baht → pct so budget scales with future income
+        if (newAllocType === 'baht' && newAllocValue) {
+            const propInc = getCurrentPropIncome();
+            if (propInc > 0) {
+                newAllocValue = (newAllocValue / propInc) * 100;
+                newAllocType = 'pct';
+            }
+        }
 
         // Validate total alloc
         if (newAllocType) {
