@@ -1365,3 +1365,203 @@ option { background: #1C2438; color: white; }
 .tx-card.income.rollover::before {
     background: var(--gold);
 }
+
+/* ===========================
+   BUDGET TRANSFER MODAL
+=========================== */
+.transfer-desc {
+    font-size: 12px;
+    font-family: var(--font-th);
+    color: var(--text-3);
+    line-height: 1.6;
+    margin: -14px 0 18px;
+    text-align: center;
+}
+
+.transfer-flow {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.transfer-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.transfer-side label {
+    font-size: 11px;
+    color: var(--text-2);
+    font-family: var(--font-th);
+}
+
+.lbl-from {
+    color: var(--expense);
+    font-weight: 600;
+}
+
+.lbl-to {
+    color: var(--income);
+    font-weight: 600;
+}
+
+.transfer-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 12px;
+    flex-shrink: 0;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+/* ===========================
+   BUDGET TRANSFER IN PANEL
+=========================== */
+.bp-transfer-section {
+    border-top: 1px dashed rgba(108, 99, 255, 0.2);
+    margin-top: 10px;
+    padding-top: 6px;
+}
+
+/* Toggle button */
+.bp-transfer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--font-th);
+    color: var(--text-3);
+    padding: 2px 0;
+    width: 100%;
+    text-align: left;
+    transition: color 0.2s;
+}
+
+.bp-transfer-toggle:hover { color: var(--accent); }
+
+.bp-toggle-chevron {
+    flex-shrink: 0;
+    transition: transform 0.25s var(--ease);
+    stroke: currentColor;
+}
+
+.bp-transfer-count {
+    opacity: 0.7;
+}
+
+/* Rows container */
+.bp-transfer-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+}
+
+.bp-transfer-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: var(--font-th);
+    color: var(--text-2);
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    background: rgba(255,255,255,0.03);
+}
+
+.bp-transfer-row:hover { background: rgba(108, 99, 255, 0.08); }
+
+.bp-transfer-icon {
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.bp-transfer-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bp-transfer-out { color: var(--expense); }
+.bp-transfer-in  { color: var(--income); }
+
+.bp-transfer-date {
+    font-size: 10px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.bp-transfer-note {
+    font-size: 10px;
+    color: var(--text-3);
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60px;
+    flex-shrink: 0;
+}
+
+.bp-transfer-amt {
+    font-weight: 600;
+    margin-left: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+
+/* Button "โยกเงิน" in budget panel header */
+.btn-bp-transfer {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(108, 99, 255, 0.12);
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    color: var(--accent);
+    border-radius: var(--radius-xs);
+    padding: 5px 11px;
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.btn-bp-transfer:hover {
+    background: rgba(108, 99, 255, 0.22);
+    border-color: rgba(108, 99, 255, 0.5);
+}
+
+.bp-net-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: var(--font-th);
+    color: var(--text-3);
+    margin-top: 4px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border);
+}
+
+.bp-net-val {
+    font-weight: 700;
+    font-size: 12px;
+}
+

@@ -101,6 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // transactions: { id, type, amount, title, category, date, timestamp, isStarred, incomeSubtype? }
     let transactions = JSON.parse(localStorage.getItem('mt_transactions')) || [];
 
+    // budgetTransfers: { id, fromCategory, toCategory, amount, date, note, timestamp }
+    let budgetTransfers = JSON.parse(localStorage.getItem('mt_budget_transfers')) || [];
+    function saveTransfers() { localStorage.setItem('mt_budget_transfers', JSON.stringify(budgetTransfers)); }
+
     // Migrate old data
     transactions = transactions.map(tx => {
         if (!tx.date) tx.date = new Date(tx.timestamp).toISOString().split('T')[0];
@@ -302,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Budget panel — always uses all-time figures
-        renderBudgetPanel(allTimeCatSpent, allTimePropInc);
+        renderBudgetPanel(allTimeCatSpent, allTimePropInc, budgetTransfers);
 
         // Render list
         txListEl.innerHTML = '';
@@ -344,9 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---- Budget Panel ----
-    // catSpentMap: { catName: totalSpent } สะสมตลอดเวลา
-    // propIncome: รายรับที่คิดสัดส่วนสะสมตลอดเวลา
-    function renderBudgetPanel(catSpentMap, propIncome) {
+    function renderBudgetPanel(catSpentMap, propIncome, transfers) {
         // Only show if there are categories with allocations OR if propIncome > 0
         const catsWithAlloc = categories.filter(c => c.allocType && c.allocValue > 0);
         if (catsWithAlloc.length === 0 && propIncome === 0) {
@@ -377,6 +379,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>ยังไม่ได้จัดสรรหมวด</span>
                 <strong class="${unallocated >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(Math.abs(unallocated))}${unallocated < 0 ? ' (เกิน)' : ''}</strong>
             </div>` : ''}
+            <button class="btn-bp-transfer" id="btn-open-transfer">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+                โยกเงินข้ามหมวด
+            </button>
         </div>`;
 
         // Warning if over-allocated
@@ -390,11 +396,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const budgetBaht = getCatBudgetBaht(cat, propIncome);
             const budgetPct = getCatBudgetPct(cat, propIncome);
             const spent = catSpentMap[cat.name] || 0;
-            const remaining = (budgetBaht || 0) - spent;
-            const usedPctOfBudget = budgetBaht > 0 ? (spent / budgetBaht) * 100 : 0;
+
+            // Transfer adjustments
+            const transOut = (transfers || []).filter(t => t.fromCategory === cat.name).reduce((s, t) => s + t.amount, 0);
+            const transIn  = (transfers || []).filter(t => t.toCategory   === cat.name).reduce((s, t) => s + t.amount, 0);
+            const effectiveBudget = (budgetBaht || 0) - transOut + transIn;
+            const remaining = effectiveBudget - spent;
+            const usedPctOfBudget = effectiveBudget > 0 ? (spent / effectiveBudget) * 100 : (spent > 0 ? 100 : 0);
             const barPct = Math.min(usedPctOfBudget, 100);
-            const isOver = spent > (budgetBaht || 0) && budgetBaht > 0;
+            const isOver = spent > effectiveBudget && effectiveBudget >= 0;
             const noIncome = propIncome === 0;
+            const hasTransfers = transOut > 0 || transIn > 0;
+
+            // Transfer history rows (collapsible)
+            let transferHtml = '';
+            if (hasTransfers) {
+                const catTransfers = (transfers || []).filter(t => t.fromCategory === cat.name || t.toCategory === cat.name);
+                const tCount = catTransfers.length;
+                const toggleId = `tr-toggle-${cat.name.replace(/\s/g,'_')}`;
+                let rowsHtml = '';
+                catTransfers.forEach(t => {
+                    const isOut = t.fromCategory === cat.name;
+                    const other = isOut ? t.toCategory : t.fromCategory;
+                    const sign  = isOut ? '−' : '+';
+                    const cls   = isOut ? 'bp-transfer-out' : 'bp-transfer-in';
+                    const icon  = isOut ? '↗' : '↙';
+                    const dateLabel = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '';
+                    rowsHtml += `<div class="bp-transfer-row ${cls}" data-tid="${t.id}">
+                        <span class="bp-transfer-icon">${icon}</span>
+                        <span class="bp-transfer-label">${isOut ? 'โยกให้' : 'รับจาก'} <strong>${other}</strong></span>
+                        ${dateLabel ? `<span class="bp-transfer-date">${dateLabel}</span>` : ''}
+                        ${t.note ? `<span class="bp-transfer-note">${escHtml(t.note)}</span>` : ''}
+                        <span class="bp-transfer-amt">${sign}฿${formatMoney(t.amount)}</span>
+                    </div>`;
+                });
+                transferHtml = `<div class="bp-transfer-section">
+                    <button class="bp-transfer-toggle" data-target="${toggleId}">
+                        <svg class="bp-toggle-chevron" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
+                        การโยกเงิน <span class="bp-transfer-count">(${tCount} รายการ)</span>
+                    </button>
+                    <div class="bp-transfer-rows hidden" id="${toggleId}">${rowsHtml}</div>
+                </div>`;
+            }
+
+            // Net effective budget line
+            const netLine = hasTransfers
+                ? `<div class="bp-net-row"><span>วงเงินจริง (หลังโยก)</span><span class="bp-net-val ${effectiveBudget >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(effectiveBudget)}</span></div>`
+                : '';
 
             html += `
             <div class="bp-cat-card" data-cat="${cat.name}">
@@ -412,7 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="bp-alloc-badge">${formatPct(budgetPct || 0)}% = ฿${formatMoney(budgetBaht || 0)}</span>
                     ${noIncome ? '<span class="bp-no-income-note">ยังไม่มีรายรับที่คิดสัดส่วน</span>' : ''}
                 </div>
-                <div class="bp-bar-wrap">
+                ${netLine}
+                <div class="bp-bar-wrap" style="margin-top:8px;">
                     <div class="bp-bar-track">
                         <div class="bp-bar-fill ${isOver ? 'over' : ''}" style="width:${barPct}%"></div>
                     </div>
@@ -428,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="bp-stat-val ${remaining >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(Math.abs(remaining))}${remaining < 0 ? ' (เกิน)' : ''}</span>
                     </div>
                 </div>
+                ${transferHtml}
             </div>`;
         });
 
@@ -454,6 +504,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Attach edit button listeners
         budgetPanelEl.querySelectorAll('.bp-edit-btn').forEach(btn => {
             btn.addEventListener('click', () => openEditCatBudget(btn.dataset.cat));
+        });
+
+        // Attach "โยกเงิน" button
+        const btnOpenTr = budgetPanelEl.querySelector('#btn-open-transfer');
+        if (btnOpenTr) btnOpenTr.addEventListener('click', () => openTransferModal());
+
+        // Attach transfer row click → edit
+        budgetPanelEl.querySelectorAll('.bp-transfer-row[data-tid]').forEach(row => {
+            row.addEventListener('click', () => openTransferModal(row.dataset.tid));
+        });
+
+        // Attach collapsible toggle for transfer sections
+        budgetPanelEl.querySelectorAll('.bp-transfer-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.target);
+                if (!target) return;
+                const isHidden = target.classList.contains('hidden');
+                target.classList.toggle('hidden', !isHidden);
+                btn.querySelector('.bp-toggle-chevron').style.transform = isHidden ? 'rotate(180deg)' : '';
+            });
         });
     }
 
@@ -796,6 +866,90 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Rollover feature removed — budget tracking is now continuous across all months
 
+    // ---- Budget Transfer Modal ----
+    const modalTransfer      = document.getElementById('modal-budget-transfer');
+    const btnCloseTransfer   = document.getElementById('btn-close-transfer');
+    const formTransfer       = document.getElementById('form-budget-transfer');
+    const transferEditId     = document.getElementById('transfer-edit-id');
+    const transferFromCat    = document.getElementById('transfer-from-cat');
+    const transferToCat      = document.getElementById('transfer-to-cat');
+    const transferAmountEl   = document.getElementById('transfer-amount');
+    const transferDateEl     = document.getElementById('transfer-date');
+    const transferNoteEl     = document.getElementById('transfer-note');
+    const btnDeleteTransfer  = document.getElementById('btn-delete-transfer');
+
+    function populateTransferCats() {
+        const catsWithAlloc = categories.filter(c => c.allocType && c.allocValue > 0);
+        [transferFromCat, transferToCat].forEach(sel => {
+            const prev = sel.value;
+            sel.innerHTML = '';
+            catsWithAlloc.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.name; o.textContent = c.name;
+                sel.appendChild(o);
+            });
+            if (prev) sel.value = prev;
+        });
+    }
+
+    function openTransferModal(editId) {
+        populateTransferCats();
+        const now = new Date();
+        if (editId) {
+            const tr = budgetTransfers.find(t => t.id === editId);
+            if (!tr) return;
+            transferEditId.value = tr.id;
+            transferFromCat.value = tr.fromCategory;
+            transferToCat.value   = tr.toCategory;
+            transferAmountEl.value = tr.amount;
+            transferDateEl.value   = tr.date;
+            transferNoteEl.value   = tr.note || '';
+            btnDeleteTransfer.classList.remove('hidden');
+        } else {
+            transferEditId.value = '';
+            transferFromCat.value = transferFromCat.options[0]?.value || '';
+            transferToCat.value   = transferToCat.options[1]?.value || transferToCat.options[0]?.value || '';
+            transferAmountEl.value = '';
+            transferDateEl.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            transferNoteEl.value = '';
+            btnDeleteTransfer.classList.add('hidden');
+        }
+        modalTransfer.classList.add('active');
+        setTimeout(() => transferAmountEl.focus(), 350);
+    }
+
+    function closeTransferModal() { modalTransfer.classList.remove('active'); }
+
+    btnCloseTransfer.addEventListener('click', closeTransferModal);
+    window.addEventListener('click', e => { if (e.target === modalTransfer) closeTransferModal(); });
+
+    formTransfer.addEventListener('submit', e => {
+        e.preventDefault();
+        const from = transferFromCat.value;
+        const to   = transferToCat.value;
+        const amt  = parseFloat(transferAmountEl.value);
+        const date = transferDateEl.value;
+        if (!from || !to || isNaN(amt) || amt <= 0 || !date) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+        if (from === to) { alert('ต้นทางและปลายทางต้องเป็นคนละหมวด'); return; }
+
+        const editId = transferEditId.value;
+        if (editId) {
+            const tr = budgetTransfers.find(t => t.id === editId);
+            if (tr) { tr.fromCategory = from; tr.toCategory = to; tr.amount = amt; tr.date = date; tr.note = transferNoteEl.value.trim(); }
+        } else {
+            budgetTransfers.push({ id: genId(), fromCategory: from, toCategory: to, amount: amt, date, note: transferNoteEl.value.trim(), timestamp: Date.now() });
+        }
+        saveTransfers(); closeTransferModal(); updateUI();
+    });
+
+    btnDeleteTransfer.addEventListener('click', () => {
+        const editId = transferEditId.value;
+        if (!editId) return;
+        if (!confirm('ลบการโยกเงินนี้?')) return;
+        budgetTransfers = budgetTransfers.filter(t => t.id !== editId);
+        saveTransfers(); closeTransferModal(); updateUI();
+    });
+
     // ---- Edit Transaction ----
     function openEditTx(txId) {
         const tx = transactions.find(t => t.id === txId);
@@ -860,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Export ----
     btnExport.addEventListener('click', () => {
-        const data = { version: 2, exported: new Date().toISOString(), transactions, categories };
+        const data = { version: 3, exported: new Date().toISOString(), transactions, categories, budgetTransfers };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -898,6 +1052,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!existingNames.has(cat.name)) { categories.push(cat); existingNames.add(cat.name); }
                 });
                 saveCats(); populateCats();
+            }
+            // Import budget transfers
+            if (data.budgetTransfers && Array.isArray(data.budgetTransfers)) {
+                const existingTrIds = new Set(budgetTransfers.map(t => t.id));
+                data.budgetTransfers.filter(t => !existingTrIds.has(t.id)).forEach(t => budgetTransfers.push(t));
+                saveTransfers();
             }
             save(); populateYears(); updateUI();
             alert(`✅ นำเข้าสำเร็จ ${newTx.length} รายการใหม่`);
