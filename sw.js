@@ -1,7 +1,7 @@
 // Increment this version EVERY TIME you update the app's files
 // The browser will detect the change, delete old cache, and re-download fresh files
 // WITHOUT touching localStorage (your transaction data is safe!)
-const CACHE_VERSION = 'mymoney-v10.5';
+const CACHE_VERSION = 'mymoney-v10.6';
 
 const ASSETS_TO_CACHE = [
     './',
