@@ -105,6 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let budgetTransfers = JSON.parse(localStorage.getItem('mt_budget_transfers')) || [];
     function saveTransfers() { localStorage.setItem('mt_budget_transfers', JSON.stringify(budgetTransfers)); }
 
+    // nonpropAllocations: { id, toCategory, amount, date, note, timestamp }
+    let nonpropAllocations = JSON.parse(localStorage.getItem('mt_nonprop_allocs')) || [];
+    function saveNonpropAllocs() { localStorage.setItem('mt_nonprop_allocs', JSON.stringify(nonpropAllocations)); }
+
     // Migrate old data
     transactions = transactions.map(tx => {
         if (!tx.date) tx.date = new Date(tx.timestamp).toISOString().split('T')[0];
@@ -349,9 +353,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Budget Panel ----
     function renderBudgetPanel(catSpentMap, propIncome, transfers) {
-        // Only show if there are categories with allocations OR if propIncome > 0
+        // Compute non-proportional income totals
+        const allTimeNonpropInc = transactions.filter(t => t.type === 'income' && t.incomeSubtype === 'non-proportional').reduce((s, t) => s + t.amount, 0);
+        const totalNonpropAllocated = nonpropAllocations.reduce((s, a) => s + a.amount, 0);
+        const nonpropRemaining = allTimeNonpropInc - totalNonpropAllocated;
+
+        // Only show if there are categories with allocations OR if propIncome > 0 OR if nonpropInc > 0
         const catsWithAlloc = categories.filter(c => c.allocType && c.allocValue > 0);
-        if (catsWithAlloc.length === 0 && propIncome === 0) {
+        if (catsWithAlloc.length === 0 && propIncome === 0 && allTimeNonpropInc === 0) {
             budgetPanelEl.classList.add('hidden');
             budgetPanelEl.innerHTML = '';
             return;
@@ -379,11 +388,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>ยังไม่ได้จัดสรรหมวด</span>
                 <strong class="${unallocated >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(Math.abs(unallocated))}${unallocated < 0 ? ' (เกิน)' : ''}</strong>
             </div>` : ''}
-            <button class="btn-bp-transfer" id="btn-open-transfer">
-                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
-                โยกเงินข้ามหมวด
-            </button>
+            <div class="bp-header-actions">
+                <button class="btn-bp-transfer" id="btn-open-transfer">
+                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+                    โยกเงินข้ามหมวด
+                </button>
+                ${catsWithAlloc.length > 0 ? `<button class="btn-bp-nonprop-alloc" id="btn-open-nonprop-alloc">
+                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    จัดสรรเงินพิเศษ
+                </button>` : ''}
+            </div>
         </div>`;
+
+        // Non-proportional income summary
+        if (allTimeNonpropInc > 0) {
+            html += `<div class="bp-nonprop-summary">
+                <div class="bp-nonprop-header">
+                    <span class="bp-nonprop-icon">💼</span>
+                    <span class="bp-nonprop-title">เงินรายรับพิเศษ (ไม่คิดสัดส่วน)</span>
+                </div>
+                <div class="bp-nonprop-stats">
+                    <div class="bp-nonprop-stat">
+                        <span class="bp-nonprop-stat-label">รวมทั้งหมด</span>
+                        <span class="bp-nonprop-stat-val" style="color:var(--accent);">฿${formatMoney(allTimeNonpropInc)}</span>
+                    </div>
+                    <div class="bp-nonprop-stat">
+                        <span class="bp-nonprop-stat-label">จัดสรรแล้ว</span>
+                        <span class="bp-nonprop-stat-val" style="color:var(--text-2);">฿${formatMoney(totalNonpropAllocated)}</span>
+                    </div>
+                    <div class="bp-nonprop-stat">
+                        <span class="bp-nonprop-stat-label">คงเหลือ</span>
+                        <span class="bp-nonprop-stat-val ${nonpropRemaining >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(Math.abs(nonpropRemaining))}${nonpropRemaining < 0 ? ' (เกิน)' : ''}</span>
+                    </div>
+                </div>
+                <div class="bp-nonprop-bar-wrap">
+                    <div class="bp-bar-track">
+                        <div class="bp-bar-fill" style="width:${allTimeNonpropInc > 0 ? Math.min((totalNonpropAllocated / allTimeNonpropInc) * 100, 100) : 0}%;background:linear-gradient(90deg,#9B8FFF,#6C63FF);"></div>
+                    </div>
+                    <span class="bp-bar-pct" style="color:var(--accent);">${allTimeNonpropInc > 0 ? formatPct((totalNonpropAllocated / allTimeNonpropInc) * 100) : '0.0'}%</span>
+                </div>
+            </div>`;
+        }
 
         // Warning if over-allocated
         if (totalAllocPct > 100.01) {
@@ -400,13 +445,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Transfer adjustments
             const transOut = (transfers || []).filter(t => t.fromCategory === cat.name).reduce((s, t) => s + t.amount, 0);
             const transIn  = (transfers || []).filter(t => t.toCategory   === cat.name).reduce((s, t) => s + t.amount, 0);
-            const effectiveBudget = (budgetBaht || 0) - transOut + transIn;
+
+            // Non-proportional allocation adjustments
+            const nonpropIn = nonpropAllocations.filter(a => a.toCategory === cat.name).reduce((s, a) => s + a.amount, 0);
+
+            const effectiveBudget = (budgetBaht || 0) - transOut + transIn + nonpropIn;
             const remaining = effectiveBudget - spent;
             const usedPctOfBudget = effectiveBudget > 0 ? (spent / effectiveBudget) * 100 : (spent > 0 ? 100 : 0);
             const barPct = Math.min(usedPctOfBudget, 100);
             const isOver = spent > effectiveBudget && effectiveBudget >= 0;
             const noIncome = propIncome === 0;
             const hasTransfers = transOut > 0 || transIn > 0;
+            const hasNonpropAlloc = nonpropIn > 0;
 
             // Transfer history rows (collapsible)
             let transferHtml = '';
@@ -439,9 +489,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             }
 
-            // Net effective budget line
-            const netLine = hasTransfers
-                ? `<div class="bp-net-row"><span>วงเงินจริง (หลังโยก)</span><span class="bp-net-val ${effectiveBudget >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(effectiveBudget)}</span></div>`
+            // Non-proportional allocation history rows (collapsible)
+            let nonpropAllocHtml = '';
+            if (hasNonpropAlloc) {
+                const catAllocs = nonpropAllocations.filter(a => a.toCategory === cat.name);
+                const aCount = catAllocs.length;
+                const allocToggleId = `na-toggle-${cat.name.replace(/\s/g,'_')}`;
+                let allocRowsHtml = '';
+                catAllocs.forEach(a => {
+                    const dateLabel = a.date ? new Date(a.date + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '';
+                    allocRowsHtml += `<div class="bp-transfer-row bp-nonprop-alloc-row" data-naid="${a.id}">
+                        <span class="bp-transfer-icon">💼</span>
+                        <span class="bp-transfer-label">เงินพิเศษ</span>
+                        ${dateLabel ? `<span class="bp-transfer-date">${dateLabel}</span>` : ''}
+                        ${a.note ? `<span class="bp-transfer-note">${escHtml(a.note)}</span>` : ''}
+                        <span class="bp-transfer-amt bp-nonprop-amt">+฿${formatMoney(a.amount)}</span>
+                    </div>`;
+                });
+                nonpropAllocHtml = `<div class="bp-transfer-section bp-nonprop-section">
+                    <button class="bp-transfer-toggle bp-nonprop-toggle-btn" data-target="${allocToggleId}">
+                        <svg class="bp-toggle-chevron" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
+                        เงินพิเศษที่จัดสรร <span class="bp-transfer-count">(${aCount} รายการ, +฿${formatMoney(nonpropIn)})</span>
+                    </button>
+                    <div class="bp-transfer-rows hidden" id="${allocToggleId}">${allocRowsHtml}</div>
+                </div>`;
+            }
+
+            // Net effective budget line (show when there are transfers OR nonprop allocations)
+            const hasAdjustments = hasTransfers || hasNonpropAlloc;
+            const netLine = hasAdjustments
+                ? `<div class="bp-net-row"><span>วงเงินจริง (หลังปรับ)</span><span class="bp-net-val ${effectiveBudget >= 0 ? 'income-color' : 'expense-color'}">฿${formatMoney(effectiveBudget)}</span></div>`
                 : '';
 
             html += `
@@ -478,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 ${transferHtml}
+                ${nonpropAllocHtml}
             </div>`;
         });
 
@@ -510,12 +588,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnOpenTr = budgetPanelEl.querySelector('#btn-open-transfer');
         if (btnOpenTr) btnOpenTr.addEventListener('click', () => openTransferModal());
 
+        // Attach "จัดสรรเงินพิเศษ" button
+        const btnOpenNa = budgetPanelEl.querySelector('#btn-open-nonprop-alloc');
+        if (btnOpenNa) btnOpenNa.addEventListener('click', () => openNonpropAllocModal());
+
         // Attach transfer row click → edit
         budgetPanelEl.querySelectorAll('.bp-transfer-row[data-tid]').forEach(row => {
             row.addEventListener('click', () => openTransferModal(row.dataset.tid));
         });
 
-        // Attach collapsible toggle for transfer sections
+        // Attach nonprop allocation row click → edit
+        budgetPanelEl.querySelectorAll('.bp-transfer-row[data-naid]').forEach(row => {
+            row.addEventListener('click', () => openNonpropAllocModal(row.dataset.naid));
+        });
+
+        // Attach collapsible toggle for transfer & allocation sections
         budgetPanelEl.querySelectorAll('.bp-transfer-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = document.getElementById(btn.dataset.target);
@@ -950,6 +1037,106 @@ document.addEventListener('DOMContentLoaded', () => {
         saveTransfers(); closeTransferModal(); updateUI();
     });
 
+    // ---- Non-Proportional Allocation Modal ----
+    const modalNonpropAlloc     = document.getElementById('modal-nonprop-alloc');
+    const btnCloseNonpropAlloc  = document.getElementById('btn-close-nonprop-alloc');
+    const formNonpropAlloc      = document.getElementById('form-nonprop-alloc');
+    const nonpropAllocEditId    = document.getElementById('nonprop-alloc-edit-id');
+    const nonpropAllocToCat     = document.getElementById('nonprop-alloc-to-cat');
+    const nonpropAllocAmountEl  = document.getElementById('nonprop-alloc-amount');
+    const nonpropAllocDateEl    = document.getElementById('nonprop-alloc-date');
+    const nonpropAllocNoteEl    = document.getElementById('nonprop-alloc-note');
+    const nonpropAllocRemainEl  = document.getElementById('nonprop-alloc-remaining');
+    const btnDeleteNonpropAlloc = document.getElementById('btn-delete-nonprop-alloc');
+
+    function populateNonpropAllocCats() {
+        const catsWithAlloc = categories.filter(c => c.allocType && c.allocValue > 0);
+        const prev = nonpropAllocToCat.value;
+        nonpropAllocToCat.innerHTML = '';
+        catsWithAlloc.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.name; o.textContent = c.name;
+            nonpropAllocToCat.appendChild(o);
+        });
+        if (prev) nonpropAllocToCat.value = prev;
+    }
+
+    function getNonpropRemaining(excludeId) {
+        const allTimeNonpropInc = transactions.filter(t => t.type === 'income' && t.incomeSubtype === 'non-proportional').reduce((s, t) => s + t.amount, 0);
+        const totalAllocated = nonpropAllocations.filter(a => a.id !== excludeId).reduce((s, a) => s + a.amount, 0);
+        return allTimeNonpropInc - totalAllocated;
+    }
+
+    function updateNonpropRemainingDisplay(excludeId) {
+        const remaining = getNonpropRemaining(excludeId);
+        if (nonpropAllocRemainEl) {
+            nonpropAllocRemainEl.textContent = `คงเหลือที่จัดสรรได้: ฿${formatMoney(Math.max(remaining, 0))}`;
+            nonpropAllocRemainEl.style.color = remaining >= 0 ? 'var(--income)' : 'var(--expense)';
+        }
+    }
+
+    function openNonpropAllocModal(editId) {
+        populateNonpropAllocCats();
+        const now = new Date();
+        if (editId) {
+            const alloc = nonpropAllocations.find(a => a.id === editId);
+            if (!alloc) return;
+            nonpropAllocEditId.value = alloc.id;
+            nonpropAllocToCat.value = alloc.toCategory;
+            nonpropAllocAmountEl.value = alloc.amount;
+            nonpropAllocDateEl.value = alloc.date;
+            nonpropAllocNoteEl.value = alloc.note || '';
+            btnDeleteNonpropAlloc.classList.remove('hidden');
+            updateNonpropRemainingDisplay(alloc.id);
+        } else {
+            nonpropAllocEditId.value = '';
+            nonpropAllocToCat.value = nonpropAllocToCat.options[0]?.value || '';
+            nonpropAllocAmountEl.value = '';
+            nonpropAllocDateEl.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            nonpropAllocNoteEl.value = '';
+            btnDeleteNonpropAlloc.classList.add('hidden');
+            updateNonpropRemainingDisplay(null);
+        }
+        modalNonpropAlloc.classList.add('active');
+        setTimeout(() => nonpropAllocAmountEl.focus(), 350);
+    }
+
+    function closeNonpropAllocModal() { modalNonpropAlloc.classList.remove('active'); }
+
+    btnCloseNonpropAlloc.addEventListener('click', closeNonpropAllocModal);
+    window.addEventListener('click', e => { if (e.target === modalNonpropAlloc) closeNonpropAllocModal(); });
+
+    formNonpropAlloc.addEventListener('submit', e => {
+        e.preventDefault();
+        const toCat = nonpropAllocToCat.value;
+        const amt   = parseFloat(nonpropAllocAmountEl.value);
+        const date  = nonpropAllocDateEl.value;
+        if (!toCat || isNaN(amt) || amt <= 0 || !date) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+
+        const editId = nonpropAllocEditId.value;
+        const remaining = getNonpropRemaining(editId || null);
+        if (amt > remaining + 0.005) {
+            alert(`จำนวนเงินเกินกว่าเงินพิเศษที่เหลือ (฿${formatMoney(Math.max(remaining, 0))})`);
+            return;
+        }
+
+        if (editId) {
+            const alloc = nonpropAllocations.find(a => a.id === editId);
+            if (alloc) { alloc.toCategory = toCat; alloc.amount = amt; alloc.date = date; alloc.note = nonpropAllocNoteEl.value.trim(); }
+        } else {
+            nonpropAllocations.push({ id: genId(), toCategory: toCat, amount: amt, date, note: nonpropAllocNoteEl.value.trim(), timestamp: Date.now() });
+        }
+        saveNonpropAllocs(); closeNonpropAllocModal(); updateUI();
+    });
+
+    btnDeleteNonpropAlloc.addEventListener('click', () => {
+        const editId = nonpropAllocEditId.value;
+        if (!editId) return;
+        if (!confirm('ลบการจัดสรรเงินพิเศษนี้?')) return;
+        nonpropAllocations = nonpropAllocations.filter(a => a.id !== editId);
+        saveNonpropAllocs(); closeNonpropAllocModal(); updateUI();
+    });
+
     // ---- Edit Transaction ----
     function openEditTx(txId) {
         const tx = transactions.find(t => t.id === txId);
@@ -1014,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Export ----
     btnExport.addEventListener('click', () => {
-        const data = { version: 3, exported: new Date().toISOString(), transactions, categories, budgetTransfers };
+        const data = { version: 4, exported: new Date().toISOString(), transactions, categories, budgetTransfers, nonpropAllocations };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1058,6 +1245,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const existingTrIds = new Set(budgetTransfers.map(t => t.id));
                 data.budgetTransfers.filter(t => !existingTrIds.has(t.id)).forEach(t => budgetTransfers.push(t));
                 saveTransfers();
+            }
+            // Import nonprop allocations
+            if (data.nonpropAllocations && Array.isArray(data.nonpropAllocations)) {
+                const existingNaIds = new Set(nonpropAllocations.map(a => a.id));
+                data.nonpropAllocations.filter(a => !existingNaIds.has(a.id)).forEach(a => nonpropAllocations.push(a));
+                saveNonpropAllocs();
             }
             save(); populateYears(); updateUI();
             alert(`✅ นำเข้าสำเร็จ ${newTx.length} รายการใหม่`);

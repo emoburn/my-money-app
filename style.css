@@ -1565,3 +1565,146 @@ option { background: #1C2438; color: white; }
     font-size: 12px;
 }
 
+/* ===========================
+   BUDGET PANEL HEADER ACTIONS
+=========================== */
+.bp-header-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+/* ===========================
+   NON-PROPORTIONAL INCOME SUMMARY
+=========================== */
+.bp-nonprop-summary {
+    margin: 0 12px 4px;
+    padding: 12px 14px;
+    background: rgba(108, 99, 255, 0.06);
+    border: 1px solid rgba(108, 99, 255, 0.18);
+    border-radius: var(--radius-sm);
+    animation: fadeSlideIn 0.35s var(--ease);
+}
+
+.bp-nonprop-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.bp-nonprop-icon {
+    font-size: 16px;
+}
+
+.bp-nonprop-title {
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.2px;
+}
+
+.bp-nonprop-stats {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.bp-nonprop-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-xs);
+    padding: 6px 4px;
+}
+
+.bp-nonprop-stat-label {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--font-th);
+}
+
+.bp-nonprop-stat-val {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-th);
+}
+
+.bp-nonprop-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===========================
+   NON-PROPORTIONAL ALLOCATION BUTTON
+=========================== */
+.btn-bp-nonprop-alloc {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(155, 143, 255, 0.12);
+    border: 1px solid rgba(155, 143, 255, 0.3);
+    color: #9B8FFF;
+    border-radius: var(--radius-xs);
+    padding: 5px 11px;
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-bp-nonprop-alloc:hover {
+    background: rgba(155, 143, 255, 0.22);
+    border-color: rgba(155, 143, 255, 0.5);
+}
+
+/* ===========================
+   NON-PROPORTIONAL ALLOCATION IN CATEGORY CARDS
+=========================== */
+.bp-nonprop-section {
+    border-top-color: rgba(155, 143, 255, 0.2);
+}
+
+.bp-nonprop-toggle-btn {
+    color: #9B8FFF;
+}
+
+.bp-nonprop-toggle-btn:hover {
+    color: var(--accent);
+}
+
+.bp-nonprop-alloc-row {
+    background: rgba(108, 99, 255, 0.05) !important;
+}
+
+.bp-nonprop-alloc-row:hover {
+    background: rgba(108, 99, 255, 0.12) !important;
+}
+
+.bp-nonprop-amt {
+    color: #9B8FFF !important;
+}
+
+/* ===========================
+   NON-PROPORTIONAL ALLOCATION MODAL
+=========================== */
+.nonprop-alloc-remaining {
+    font-size: 12px;
+    font-family: var(--font-th);
+    font-weight: 600;
+    color: var(--income);
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: rgba(0, 214, 143, 0.07);
+    border: 1px solid rgba(0, 214, 143, 0.18);
+    border-radius: var(--radius-xs);
+    text-align: center;
+}

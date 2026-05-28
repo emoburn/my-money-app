@@ -398,6 +398,51 @@
     </div>
 </div>
 
+<!-- ===== NON-PROPORTIONAL INCOME ALLOCATION MODAL ===== -->
+<div id="modal-nonprop-alloc" class="modal-overlay">
+    <div class="modal-sheet scale-up">
+        <div class="modal-inner">
+            <div class="modal-topbar">
+                <h3>💼 จัดสรรเงินพิเศษ</h3>
+                <button class="btn-modal-close" id="btn-close-nonprop-alloc">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <p class="transfer-desc">นำเงินรายรับพิเศษ (ไม่คิดสัดส่วน) ไปเติมให้หมวดที่ต้องการ<br>เช่น โปะหมวดที่ใช้เกิน หรือ คืนเงินหมวดที่โยกออกไป</p>
+            <form id="form-nonprop-alloc">
+                <input type="hidden" id="nonprop-alloc-edit-id">
+                <div class="field-row">
+                    <label>เติมให้หมวด</label>
+                    <select id="nonprop-alloc-to-cat" class="field-input" required></select>
+                </div>
+                <div class="field-row" style="margin-top:14px;">
+                    <label>จำนวนเงิน (฿)</label>
+                    <div class="amount-display" style="margin-top:6px;">
+                        <span class="amount-currency">฿</span>
+                        <input type="number" id="nonprop-alloc-amount" placeholder="0.00" step="0.01" min="0.01" required inputmode="decimal">
+                    </div>
+                    <p class="nonprop-alloc-remaining" id="nonprop-alloc-remaining">คงเหลือที่จัดสรรได้: ฿0.00</p>
+                </div>
+                <div class="field-row">
+                    <label>วันที่</label>
+                    <input type="date" id="nonprop-alloc-date" required class="field-input">
+                </div>
+                <div class="field-row">
+                    <label>หมายเหตุ <span style="color:var(--text-3);font-weight:400;">(ไม่บังคับ)</span></label>
+                    <input type="text" id="nonprop-alloc-note" placeholder="เช่น โบนัสคืนให้หมวดออม" class="field-input">
+                </div>
+                <div class="modal-actions" style="display:flex;gap:10px;">
+                    <button type="button" id="btn-delete-nonprop-alloc" class="btn-save hidden" style="flex:0 0 52px;background:rgba(255,77,109,0.15);color:var(--expense);box-shadow:none;border:1px solid rgba(255,77,109,0.3);" title="ลบการจัดสรร">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    <button type="submit" id="btn-submit-nonprop-alloc" class="btn-save" style="flex:1;background:linear-gradient(135deg,#9B8FFF,#6C63FF);box-shadow:0 4px 14px rgba(108,99,255,0.35);">บันทึกการจัดสรร</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
+
